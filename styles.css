@@ -28,7 +28,7 @@
 
 .calendar .cal-day em{font-style:normal;font-size:8px;color:var(--muted);font-weight:800;line-height:1}.calendar-summary{display:grid;grid-template-columns:auto 1fr auto 1fr;align-items:center;gap:4px 8px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:10px;font-size:10px;color:var(--muted)}.calendar-summary b{font-size:15px;color:var(--ink)}.delete-exercise{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 
-/* Switch de ativaÃ§Ã£o/desativaÃ§Ã£o dos exercÃ­cios */
+/* Switch de ativação/desativação dos exercícios */
 .exercise-switch{position:relative;display:inline-flex!important;align-items:center;justify-content:flex-end!important;width:74px!important;height:30px!important;flex:0 0 74px;cursor:pointer;margin:0!important;padding:0!important;gap:5px}
 .exercise-switch input{position:absolute!important;opacity:0!important;width:1px!important;height:1px!important;margin:0!important;pointer-events:none}
 .switch-slider{position:relative;display:block;width:46px;height:26px;background:#cbd5dc;border-radius:999px;transition:.2s;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
@@ -40,7 +40,7 @@
 .exercise-disabled b{text-decoration:line-through;text-decoration-thickness:1px}
 .exercise-row .exercise-switch{margin-left:6px}
 
-/* Estado visÃ­vel do switch */
+/* Estado visível do switch */
 .exercise-disabled{opacity:.58}
 
 .complete-exercise{width:100%;min-height:50px;margin-top:10px;border-radius:14px;padding:0 16px;background:var(--accent);color:#fff;font-weight:900;font-size:15px}
@@ -61,7 +61,7 @@ button:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
 }
 @keyframes restPulse{from{transform:scale(1)}to{transform:scale(1.04)}}
 
-/* Biblioteca de exercÃ­cios */
+/* Biblioteca de exercícios */
 .exercise-library-card{
   margin:16px 0;
   padding:16px;
@@ -78,7 +78,7 @@ button:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
 .library-item{display:flex;align-items:center;justify-content:space-between;width:100%;padding:13px 14px;border:0;border-radius:12px;text-align:left;font-weight:800;background:var(--soft,#f5f5f5)}
 .library-empty{padding:14px;text-align:center;opacity:.6}
 
-/* Seletor de exercÃ­cios */
+/* Seletor de exercícios */
 .exercise-picker[hidden]{display:none!important}
 .exercise-picker{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center}
 .exercise-picker-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
@@ -90,7 +90,7 @@ button:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
 .exercise-create-box{margin-top:18px;padding-top:16px;border-top:1px solid rgba(0,0,0,.10)}
 .picker-item{cursor:pointer}
 
-/* ConfiguraÃ§Ã£o por treino */
+/* Configuração por treino */
 .workout-config[hidden]{display:none!important}
 .workout-config{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center}
 .workout-config-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
@@ -99,11 +99,11 @@ button:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
 .config-label{display:block;margin:10px 0;font-size:13px;font-weight:800}
 .config-label .library-search{margin-top:5px}
 
-/* Fase 2 - mÃºltiplos treinos */
+/* Fase 2 - múltiplos treinos */
 .page-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 18px}.page-title-row h3{margin:0}.primary.small{padding:10px 14px;font-size:13px}.card-actions{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:14px}.card-actions>*{flex:0 0 44px}.f2-card{min-width:0}.f2-group{margin-bottom:12px}.f2-exercise{align-items:center}.f2-exercise>div:last-child{display:flex;gap:3px}.f2-group .page-title-row{margin-bottom:10px}.f2-group small{color:var(--muted,#6b7280)}
 .settings-card textarea{width:100%;box-sizing:border-box;resize:vertical;border:1px solid var(--border,#ddd);border-radius:10px;padding:10px;font:inherit;background:var(--surface,#fff)}
 
-/* PadronizaÃ§Ã£o dos campos de texto dos formulÃ¡rios de treino */
+/* Padronização dos campos de texto dos formulários de treino */
 .settings-card input:not([type]),.settings-card input[type="text"]{display:block;width:100%;box-sizing:border-box;margin-top:6px;min-height:50px;border:1px solid var(--line);border-radius:13px;padding:0 14px;background:#f8fafb;color:var(--ink);font:inherit;outline:none;-webkit-appearance:none;appearance:none}
 .settings-card input:not([type]):focus,.settings-card input[type="text"]:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(40,160,90,.10)}
 .settings-card input:not([type]):active,.settings-card input[type="text"]:active{border-color:var(--accent2)}
@@ -127,7 +127,7 @@ button:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
 
 
 
-/* v33 - Cards premium inspirados no design de referÃªncia */
+/* v33 - Cards premium inspirados no design de referência */
 .training-card.f2-card{
   position:relative;
   min-height:206px;
@@ -434,7 +434,7 @@ button:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
   }
 }
 
-/* Planejamento com IA: componente opcional, isolado da execuÃ§Ã£o do treino. */
+/* Planejamento com IA: componente opcional, isolado da execução do treino. */
 .ai-planning-button{width:100%;margin:0 0 16px;min-height:48px}
 .ai-planning-unavailable{margin:0 0 16px;padding:12px 14px;border:1px dashed #cbd5e1;border-radius:12px;color:#64748b;font-size:13px;line-height:1.45}
 .ai-planning-unavailable code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
