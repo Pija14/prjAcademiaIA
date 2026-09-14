@@ -38,7 +38,7 @@ RATE_WINDOW_SECONDS = 60
 
 class PlanRequest(BaseModel):
     objective: str = Field(min_length=2, max_length=80)
-    level: Literal["Iniciante", "IntermediÃ¡rio", "AvanÃ§ado"]
+    level: Literal["Iniciante", "Intermediário", "Avançado"]
     daysPerWeek: int = Field(ge=1, le=7)
     durationMinutes: int = Field(ge=20, le=180)
     equipment: str = Field(default="", max_length=400)
@@ -53,7 +53,7 @@ class PlanRequest(BaseModel):
 
 SYSTEM_PROMPT = """You create educational workout-plan suggestions. Return ONLY valid JSON with this shape:
 {
-  "name": "string", "description": "string", "level": "Iniciante|IntermediÃ¡rio|AvanÃ§ado|Personalizado",
+  "name": "string", "description": "string", "level": "Iniciante|Intermediário|Avançado|Personalizado",
   "groups": [{"name": "string", "exercises": [{"name": "string", "equipment": "string", "seriesCount": 3, "sets": [{"reps": "8-12"}]}]}],
   "notes": ["string"]
 }
@@ -66,12 +66,12 @@ def prompt_for(data: PlanRequest) -> str:
 
 Create a plan using this user profile:
 - Objetivo: {data.objective}
-- NÃ­vel: {data.level}
+- Nível: {data.level}
 - Dias por semana: {data.daysPerWeek}
-- DuraÃ§Ã£o por treino: {data.durationMinutes} minutos
-- Equipamentos: {data.equipment or 'nÃ£o informado'}
-- LimitaÃ§Ãµes/observaÃ§Ãµes: {data.limitations or 'nÃ£o informado'}
-- PreferÃªncia de divisÃ£o: {data.splitPreference or 'sem preferÃªncia'}
+- Duração por treino: {data.durationMinutes} minutos
+- Equipamentos: {data.equipment or 'não informado'}
+- Limitações/observações: {data.limitations or 'não informado'}
+- Preferência de divisão: {data.splitPreference or 'sem preferência'}
 """
 
 
@@ -79,16 +79,16 @@ def parse_json(text: str) -> dict:
     try:
         value = json.loads(text)
     except json.JSONDecodeError as exc:
-        raise HTTPException(502, "O provedor de IA retornou um formato invÃ¡lido.") from exc
+        raise HTTPException(502, "O provedor de IA retornou um formato inválido.") from exc
     if not isinstance(value, dict):
-        raise HTTPException(502, "O provedor de IA retornou um plano invÃ¡lido.")
+        raise HTTPException(502, "O provedor de IA retornou um plano inválido.")
     return value
 
 
 async def generate_with_openai(prompt: str) -> dict:
     key = os.getenv("OPENAI_API_KEY", "")
     if not key:
-        raise HTTPException(503, "OPENAI_API_KEY nÃ£o configurada no servidor.")
+        raise HTTPException(503, "OPENAI_API_KEY não configurada no servidor.")
     payload = {
         "model": os.getenv("OPENAI_MODEL", "gpt-5-mini"),
         "input": prompt,
@@ -97,7 +97,7 @@ async def generate_with_openai(prompt: str) -> dict:
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.post("https://api.openai.com/v1/responses", json=payload, headers={"Authorization": f"Bearer {key}"})
     if response.status_code >= 400:
-        raise HTTPException(502, "NÃ£o foi possÃ­vel gerar o plano com a IA.")
+        raise HTTPException(502, "Não foi possível gerar o plano com a IA.")
     result = response.json()
     return parse_json(result.get("output_text", ""))
 
@@ -105,19 +105,19 @@ async def generate_with_openai(prompt: str) -> dict:
 async def generate_with_gemini(prompt: str) -> dict:
     key = os.getenv("GEMINI_API_KEY", "")
     if not key:
-        raise HTTPException(503, "GEMINI_API_KEY nÃ£o configurada no servidor.")
+        raise HTTPException(503, "GEMINI_API_KEY não configurada no servidor.")
     model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     payload = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"responseMimeType": "application/json", "temperature": 0.4}}
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.post(url, json=payload)
     if response.status_code >= 400:
-        raise HTTPException(502, "NÃ£o foi possÃ­vel gerar o plano com a IA.")
+        raise HTTPException(502, "Não foi possível gerar o plano com a IA.")
     result = response.json()
     try:
         text = result["candidates"][0]["content"]["parts"][0]["text"]
     except (KeyError, IndexError, TypeError) as exc:
-        raise HTTPException(502, "O provedor de IA nÃ£o retornou um plano utilizÃ¡vel.") from exc
+        raise HTTPException(502, "O provedor de IA não retornou um plano utilizável.") from exc
     return parse_json(text)
 
 
@@ -128,7 +128,7 @@ def enforce_rate_limit(request: Request) -> None:
     while bucket and now - bucket[0] > RATE_WINDOW_SECONDS:
         bucket.popleft()
     if len(bucket) >= RATE_LIMIT:
-        raise HTTPException(429, "Muitas solicitaÃ§Ãµes. Aguarde um minuto e tente novamente.")
+        raise HTTPException(429, "Muitas solicitações. Aguarde um minuto e tente novamente.")
     bucket.append(now)
 
 
