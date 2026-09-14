@@ -1,0 +1,13 @@
+# Local frontend deployment configuration
+config.js
+
+# Backend secrets and virtual environments
+ai-backend/.env
+ai-backend/.venv/
+ai-backend/__pycache__/
+__pycache__/
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+
