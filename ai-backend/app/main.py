@@ -89,27 +89,33 @@ async def generate_with_openai(prompt: str) -> dict:
     key = os.getenv("OPENAI_API_KEY", "")
     if not key:
         raise HTTPException(503, "OPENAI_API_KEY não configurada no servidor.")
+    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     payload = {
-        "model": os.getenv("OPENAI_MODEL", "gpt-5-mini"),
-        "input": prompt,
-        "text": {"format": {"type": "json_object"}},
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+        "response_format": {"type": "json_object"},
+        "temperature": 0.4,
     }
-    async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.post("https://api.openai.com/v1/responses", json=payload, headers={"Authorization": f"Bearer {key}"})
+    async with httpx.AsyncClient(timeout=60) as client:
+        response = await client.post("https://api.openai.com/v1/chat/completions", json=payload, headers={"Authorization": f"Bearer {key}"})
     if response.status_code >= 400:
         raise HTTPException(502, "Não foi possível gerar o plano com a IA.")
     result = response.json()
-    return parse_json(result.get("output_text", ""))
+    try:
+        text = result["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError) as exc:
+        raise HTTPException(502, "O provedor de IA não retornou um plano utilizável.") from exc
+    return parse_json(text)
 
 
 async def generate_with_gemini(prompt: str) -> dict:
     key = os.getenv("GEMINI_API_KEY", "")
     if not key:
         raise HTTPException(503, "GEMINI_API_KEY não configurada no servidor.")
-    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
     payload = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"responseMimeType": "application/json", "temperature": 0.4}}
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=60) as client:
         response = await client.post(url, json=payload)
     if response.status_code >= 400:
         raise HTTPException(502, "Não foi possível gerar o plano com a IA.")
@@ -147,4 +153,3 @@ async def create_plan(data: PlanRequest, request: Request) -> dict:
     if provider == "gemini":
         return await generate_with_gemini(prompt)
     raise HTTPException(503, "AI_PROVIDER deve ser 'gemini' ou 'openai'.")
-
