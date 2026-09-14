@@ -125,8 +125,9 @@ O recurso opcional **Planejar com IA** cria uma sugestão de ficha e só a salva
 
 1. Publique esta pasta como a raiz de um repositório GitHub e envie para `main`.
 2. Em **Settings → Pages**, escolha **GitHub Actions**. O workflow `.github/workflows/deploy-pages.yml` publica somente os arquivos estáticos da PWA.
-3. Para o GitHub Pages, crie a variável de repositório `AI_API_URL` em **Settings → Secrets and variables → Actions → Variables** com a URL HTTPS do backend. O workflow gera `config.js` durante a publicação, sem versioná-lo.
-4. Para desenvolvimento local, copie `config.example.js` para `config.js` e indique o backend HTTPS:
+3. O arquivo `config.js` contém somente a URL pública do backend e pode ser publicado no GitHub Pages. Nunca inclua chaves de API nele.
+4. Como alternativa, a variável de repositório `AI_API_URL` em **Settings → Secrets and variables → Actions → Variables** substitui a URL durante o workflow.
+5. Para desenvolvimento local, ajuste `config.js` ou use `config.example.js` com outro backend HTTPS:
 
 ```js
 window.MEU_TREINO_CONFIG = {
@@ -134,7 +135,7 @@ window.MEU_TREINO_CONFIG = {
 };
 ```
 
-Sem `config.js`, todos os treinos continuam funcionando e apenas a função de IA fica desativada. `config.js` está no `.gitignore` e nunca deve conter uma chave de API.
+Sem `config.js`, todos os treinos continuam funcionando e apenas a função de IA fica desativada. O arquivo nunca deve conter uma chave de API.
 
 ### Backend de IA
 
