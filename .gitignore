@@ -1,5 +1,5 @@
-# Local frontend deployment configuration
-config.js
+# Local frontend secrets must not be committed. config.js contains only the
+# public backend URL and is intentionally versioned for GitHub Pages.
 
 # Backend secrets and virtual environments
 ai-backend/.env
