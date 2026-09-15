@@ -164,6 +164,12 @@ GitHub Pages não executa Python ou Node. Hospede `ai-backend` separadamente em 
 
 Nunca envie `.env`, `config.js` ou chaves para o GitHub. O backend inclui validação, timeout e um limite simples de requisições; use também o rate limiting do provedor para produção.
 
+## v40 — Ajustes de navegação e cards
+
+- Ícones SVG do menu inferior centralizados vertical e horizontalmente, com áreas de toque uniformes.
+- Botão de exclusão dos cards de treino fixado no canto superior direito, com alvo de toque mínimo de 44px e sem interferir na ação do card.
+- Cache do Service Worker e versões dos arquivos `styles.css`/`app.js` atualizados para v40.
+
 ## v39 — Redesign visual e sistema de design
 - Reescrita completa do `styles.css` em camadas: tokens, reset, tipografia, layout, componentes, telas e responsividade.
 - Consolidada a identidade visual em tokens de cor, espaçamento, tipografia, raio e elevação.

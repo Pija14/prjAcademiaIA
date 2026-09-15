@@ -339,6 +339,59 @@ h3 {
   stroke-linejoin: round;
 }
 
+/* Navegação inferior: ícones centralizados e área de toque uniforme */
+.bottomnav {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  z-index: 20;
+  width: min(620px, 100%);
+  min-height: 64px;
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  padding: var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.bottomnav button {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.bottomnav button:hover {
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+.bottomnav button.active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.bottomnav button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
 .bottomnav span {
   display: inline-grid;
   place-items: center;
