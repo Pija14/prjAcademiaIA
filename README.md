@@ -117,6 +117,23 @@ Corrigida a tela de execução para preservar as séries e repetições prescrit
 - Campo Nome da tela de edição/novo treino padronizado visualmente com os demais campos do formulário.
 - Mantidos dados, navegação e demais funcionalidades.
 
+## v38 — Restauração do módulo "Meus Treinos"
+
+Ao adicionar a tela de login, o bloco da Fase 2 foi perdido do `app.js`: cerca de 44 funções eram chamadas mas não existiam mais, o que derrubava a navegação inferior.
+
+- Restaurado o módulo completo de múltiplos treinos (grupos, exercícios, reordenação, duplicação, exclusão lógica e migração automática de A/B/C).
+- Restaurados os helpers de execução (`currentExercise`, `exerciseSetCount`, `stopIntervals`, `updateTimers`, `beep`, `confirmExitWorkout`) e o calendário (`calDate`, `changeMonth`).
+- `Treinos` e `Calendário` voltaram a abrir; `Histórico` deixou de quebrar quando há treinos registrados.
+- Tela de Configurações reescrita, agora com dados da conta e sair.
+- `renderWorkout` não referencia mais a variável inexistente `last`, e o rótulo do treino mostra o nome em vez do id.
+- `finishWorkout` compara a chave certa ao detectar execução duplicada.
+- `DEFAULTS` passa a declarar `myWorkouts` e `workoutHistory`.
+- Removido o listener `DOMContentLoaded` duplicado e a definição duplicada de `exerciseReadyForStart`.
+- `clearData` limpa apenas histórico e execuções, sem descartar os treinos cadastrados.
+- Definido `setPlanEnabled` e adicionado o campo Nome que a tela legada A/B/C esperava.
+- Estilos adicionados para `.f2-actions`, `.groups-title-row`, `.group-add-btn` e `.new-workout-form`.
+- Cache do Service Worker atualizado para v38.
+
 ## Planejamento com IA e GitHub Pages
 
 O recurso opcional **Planejar com IA** cria uma sugestão de ficha e só a salva após confirmação. A ficha resultante usa a mesma estrutura dos treinos manuais e funciona offline; somente a geração exige internet.
@@ -146,4 +163,20 @@ GitHub Pages não executa Python ou Node. Hospede `ai-backend` separadamente em 
 3. Para executar localmente: em `ai-backend`, crie um ambiente virtual, instale `pip install -r requirements.txt` e execute `uvicorn app.main:app --host 0.0.0.0 --port 8000`.
 
 Nunca envie `.env`, `config.js` ou chaves para o GitHub. O backend inclui validação, timeout e um limite simples de requisições; use também o rate limiting do provedor para produção.
+
+## v39 — Redesign visual e sistema de design
+- Reescrita completa do `styles.css` em camadas: tokens, reset, tipografia, layout, componentes, telas e responsividade.
+- Consolidada a identidade visual em tokens de cor, espaçamento, tipografia, raio e elevação.
+- Padronizados cards, listas, formulários, botões, pills, badges, estados vazios e controles do editor.
+- Melhorada a leitura da tela de execução com estados visuais `idle`, `running` e `resting` no card principal.
+- Botão de série em execução/descanso passou a ter estados visuais distintos sem alterar a lógica dos cronômetros.
+- Ícones de navegação e ações substituídos por SVG inline local, mantendo handlers existentes.
+- Adicionado foco visível, alvos de toque mínimos, campos de formulário com 16px e suporte a `prefers-reduced-motion`.
+- Adicionado tema escuro por tokens via `prefers-color-scheme: dark` e `color-scheme: light dark`.
+- Removidos estilos CSS legados sem uso das versões anteriores.
+- Mantida a fonte de sistema; nenhuma fonte, CDN ou recurso externo foi adicionado.
+- Cache do Service Worker e versões dos arquivos `styles.css`/`app.js` atualizados para v39.
+
+### Observação técnica
+- `renderDashboard()` continua presente no `app.js`, mas não é chamado pela navegação atual. Ele foi preservado e não recebeu investimento de redesign, conforme a tarefa.
 
