@@ -1,4 +1,3 @@
-
 /* =========================================================
    BIBLIOTECA DE EXERCÍCIOS - IndexedDB
    ========================================================= */
@@ -262,6 +261,9 @@ const ALL_EXERCISES = Object.fromEntries(
 const KEY = "meuTreinoDataV1";
 const DEFAULTS = {
   workouts: [],
+  users: [],
+  currentUserId: null,
+  ownerId: null,
   settings: {rest:30, sound:true, vibration:true, theme:"light"},
   excludedExercises: {A:[],B:[],C:[]},
   customExercises: {A:[],B:[],C:[]},
@@ -274,6 +276,7 @@ try {
 } catch(e) {
   db = JSON.parse(JSON.stringify(DEFAULTS));
 }
+if(!Array.isArray(db.users)) db.users = [];
 if(!db.excludedExercises) db.excludedExercises = {A:[],B:[],C:[]};
 if(!db.customExercises) db.customExercises = {A:[],B:[],C:[]};
 if(!db.workoutPlans) db.workoutPlans = {A:null,B:null,C:null};
@@ -284,11 +287,120 @@ if(!db.workoutNames) db.workoutNames = {A:"Treino A",B:"Treino B",C:"Treino C"};
 });
 let state = { page:"home", training:null, exerciseIndex:0, workout:null, exerciseTimer:0, exerciseOneMinuteAlerted:false, exerciseRunning:false, exerciseStartedAt:null, currentSetIndex:0, restTimer:0, restRunning:false, timerInterval:null, restInterval:null };
 
+function uid(prefix="id"){ return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2,8)}`; }
+function normalizeEmail(value){ return String(value || "").trim().toLowerCase(); }
+function seedOwnerUser(){
+  if(db.users.length) return;
+  const owner = {
+    id: uid("user"),
+    name: "Rafael Louzada",
+    email: "rafaellouzadaa@gmail.com",
+    password: "",
+    createdAt: new Date().toISOString()
+  };
+  db.users.push(owner);
+  db.ownerId = owner.id;
+  db.currentUserId = null;
+  save();
+}
+function ensureAuthState(){
+  if(!Array.isArray(db.users)) db.users = [];
+  seedOwnerUser();
+  if(!db.ownerId || !db.users.some(u => u.id === db.ownerId)) db.ownerId = db.users[0].id;
+  if(db.currentUserId && !db.users.some(u => u.id === db.currentUserId)) db.currentUserId = null;
+  if(!db.users.some(u => u.email && normalizeEmail(u.email) === "rafaellouzadaa@gmail.com")) {
+    db.users.unshift({
+      id: uid("user"),
+      name: "Rafael Louzada",
+      email: "rafaellouzadaa@gmail.com",
+      password: "",
+      createdAt: new Date().toISOString()
+    });
+    db.ownerId = db.users[0].id;
+  }
+}
+function getCurrentUser(){
+  ensureAuthState();
+  return db.users.find(u => u.id === db.currentUserId) || null;
+}
+function getOwnerUser(){
+  ensureAuthState();
+  return db.users.find(u => u.id === db.ownerId) || db.users[0] || null;
+}
+function loginWithEmail(email, password=""){
+  ensureAuthState();
+  const normalized = normalizeEmail(email);
+  if(!normalized){ alert("Informe seu e-mail."); return false; }
+  const user = db.users.find(u => normalizeEmail(u.email) === normalized);
+  if(!user){ alert("Usuário não encontrado."); return false; }
+  const isOwnerAccount = normalizeEmail(user.email) === "rafaellouzadaa@gmail.com";
+  const hasStoredPassword = typeof user.password === "string" && user.password.trim().length > 0;
+  const submittedPassword = String(password || "").trim();
+  if(!hasStoredPassword && isOwnerAccount){
+    db.currentUserId = user.id; save(); return true;
+  }
+  if(!hasStoredPassword && !submittedPassword){
+    db.currentUserId = user.id; save(); return true;
+  }
+  if(user.password === submittedPassword || (!hasStoredPassword && !submittedPassword)){
+    db.currentUserId = user.id; save(); return true;
+  }
+  alert("E-mail ou senha inválidos.");
+  return false;
+}
+function logoutUser(){
+  db.currentUserId = null; save(); renderAuthScreen();
+}
+function handleLoginSubmit(event){
+  event.preventDefault();
+  const email = document.getElementById("auth-email")?.value || "";
+  const password = document.getElementById("auth-password")?.value || "";
+  if(loginWithEmail(email, password)){
+    renderHome();
+  }
+  return false;
+}
+function renderAuthScreen(){
+  const ownerUser = getOwnerUser();
+  const ownerEmail = ownerUser?.email || "rafaellouzadaa@gmail.com";
+  const app = document.getElementById("app");
+  if(!app) return;
+  app.innerHTML = `
+    <div class="auth-shell">
+      <div class="auth-card">
+        <div class="eyebrow">ACESSO</div>
+        <h2>Entrar</h2>
+        <p class="muted">Seja bem-vindo(a) de volta.</p>
+        <form onsubmit="return handleLoginSubmit(event)">
+          <label class="auth-field">
+            <span>E-mail</span>
+            <input id="auth-email" type="email" value="${esc(ownerEmail)}" autocomplete="email" required>
+          </label>
+          <label class="auth-field">
+            <span>Senha</span>
+            <input id="auth-password" type="password" placeholder="Opcional para a conta principal" autocomplete="current-password">
+          </label>
+          <button class="primary full" type="submit">Entrar</button>
+        </form>
+        <div class="auth-note">Conta principal: <b>${esc(ownerEmail)}</b></div>
+      </div>
+    </div>
+  `;
+}
+function bootApp(){
+  ensureAuthState();
+  if(!getCurrentUser()){
+    renderAuthScreen();
+    return;
+  }
+  renderHome();
+}
+
 function save(){ localStorage.setItem(KEY, JSON.stringify(db)); }
 function pad(n){ return String(n).padStart(2,"0"); }
 function fmt(sec){ sec=Math.max(0,Math.floor(sec)); return `${pad(Math.floor(sec/3600))}:${pad(Math.floor(sec%3600/60))}:${pad(sec%60)}`; }
 function fmtShort(sec){ sec=Math.max(0,Math.floor(sec)); return `${pad(Math.floor(sec/60))}:${pad(sec%60)}`; }
-function esc(s){ return String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])); }
+function esc(s){ return String(s).replace(/[&<>"]'/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])); }
 function flatTraining(code){
   // Quando o treino foi personalizado, sua lista passa a ser a fonte oficial.
   const plan = db.workoutPlans?.[code];
@@ -348,6 +460,10 @@ function layout(content, active="home"){
 }
 
 function go(page){
+  if(!getCurrentUser()){
+    renderAuthScreen();
+    return;
+  }
   stopIntervals();
   state.page=page; state.training=null; state.workout=null;
   if(page==="home")renderHome();
@@ -454,7 +570,11 @@ function renderTrainings(){
     .map(f2WorkoutCard)
     .join("");
 
-  layout(`<div class="training-grid">${cards||'<div class="empty big">Nenhum treino ativo.</div>'}</div>` ,"trainings");
+  const aiAction=aiPlanningIsConfigured()
+    ? `<button class="secondary ai-planning-button" onclick="renderAiPlanner()">✨ Planejar com IA</button>`
+    : `<div class="ai-planning-unavailable">✨ Planejamento com IA indisponível. Configure <code>config.js</code> para ativar.</div>`;
+
+  layout(`${aiAction}<div class="training-grid">${cards||'<div class="empty big">Nenhum treino ativo.</div>'}</div>` ,"trainings");
 }
 function customizeTraining(code){ ensureWorkoutPlan(code); editTraining(code); }
 function editTraining(code){
@@ -807,6 +927,7 @@ function openSettings(){
     <section class="settings-card"><label>Descanso padrão <select onchange="db.settings.rest=+this.value;save()">${[30,45,60,90,120].map(x=>`<option value="${x}" ${db.settings.rest===x?'selected':''}>${x} segundos</option>`).join("")}</select></label>
     <label class="switch">Vibração <input type="checkbox" ${db.settings.vibration?'checked':''} onchange="db.settings.vibration=this.checked;save()"></label>
     <label class="switch">Som <input type="checkbox" ${db.settings.sound?'checked':''} onchange="db.settings.sound=this.checked;save()"></label>
+    <label class="switch">Conta: ${esc(getCurrentUser()?.name || "Convidado")} <button class="secondary compact" type="button" onclick="logoutUser()">Sair</button></label>
     </section>
     <section class="settings-card"><h3>Treinos</h3>
     <p class="muted">Personalize os treinos, altere o nome e monte sua própria sequência de exercícios.</p>
@@ -816,10 +937,15 @@ function openSettings(){
 }
 function exportData(){const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="meu-treino-backup.json";a.click();URL.revokeObjectURL(a.href);}
 function importData(file){if(!file)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!x.workouts)throw 0;db=x;save();openSettings();alert("Dados importados com sucesso.");}catch(e){alert("Arquivo inválido.");}};r.readAsText(file);}
-function clearData(){if(confirm("Apagar todo o histórico? Esta ação não pode ser desfeita.")){db=DEFAULTS;save();openSettings();}}
+function clearData(){if(confirm("Apagar todo o histórico? Esta ação não pode ser desfeita.")){
+  const auth = { users: db.users || [], currentUserId: db.currentUserId || null, ownerId: db.ownerId || null };
+  db = { ...JSON.parse(JSON.stringify(DEFAULTS)), users: auth.users, currentUserId: auth.currentUserId, ownerId: auth.ownerId };
+  save();
+  openSettings();
+}}
 
 if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js"));
-renderHome();
+bootApp();
 
 
 /* =========================================================
@@ -954,7 +1080,7 @@ window.WorkoutExercise = {
    FASE 2 - MULTIPLOS TREINOS / GRUPOS / EXERCICIOS / HISTORICO
    Camada incremental sobre a arquitetura v26.
    ========================================================= */
-const F2_GROUPS = ["Peito","Costas","Bíceps","Tríceps","Ombros","Trapézio","Quadríceps","Posterior de coxa","Glúteos","Panturrilhas","Abdômen","Lombar","Antebraços","Adutores","Abdutores"];
+const F2_GROUPS = ["Peito","Costas","Bíceps","Tríceps","Ombros","Trapézio","Quadríceps","Posterior de coxa","Glúteos","Panturrilhas","Abdômen","Lombar","Antebraços","Adutores"];
 function uid(prefix="id"){ return prefix+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function parseSetNumber(v){ const m=String(v??"").match(/\d+/); return m?Math.max(1,parseInt(m[0],10)):0; }
 function repsForSet(reps,i){ const parts=String(reps||"").split("/").map(x=>x.trim()).filter(Boolean); return parts[i] || parts[parts.length-1] || ""; }
@@ -1204,63 +1330,28 @@ function startExerciseTimer(){if(state.restRunning||state.exerciseRunning)return
 function startMainTick(){if(state.timerInterval)clearInterval(state.timerInterval);state.timerInterval=setInterval(()=>{if(state.exerciseRunning&&state.exerciseStartedAt){state.exerciseTimer=(Date.now()-state.exerciseStartedAt)/1000;if(state.exerciseTimer>=60){state.exerciseTimer=60;state.exerciseRunning=false;state.exerciseStartedAt=null;clearInterval(state.timerInterval);state.timerInterval=null;if(navigator.vibrate&&db.settings.vibration)navigator.vibrate([250,120,250]);beep();startRest();return;}}updateTimers();},100);}
 function startRest(){if(state.restRunning)return;const e=currentExercise(),count=exerciseSetCount(e);if(!count)return;const ex=state.workout.exercises[state.exerciseIndex];while(ex.sets.length<count)ex.sets.push({number:ex.sets.length+1,reps:"",weight:"",done:false,completedAt:null});state.restRunning=true;state.restTimer=30;if(state.restInterval)clearInterval(state.restInterval);state.restInterval=setInterval(()=>{state.restTimer-=1;updateTimers();if(state.restTimer<=0)finishRestAndEnableNextSeries();},1000);renderWorkout();}
 function stopRest(){return;}
-function finishRestAndEnableNextSeries(){if(!state.restRunning)return;if(state.restInterval)clearInterval(state.restInterval);state.restInterval=null;state.restRunning=false;state.restTimer=0;const e=currentExercise(),count=exerciseSetCount(e),ex=state.workout.exercises[state.exerciseIndex],idx=Math.min(state.currentSetIndex,count-1);if(ex.sets[idx]){ex.sets[idx].done=true;ex.sets[idx].completedAt=new Date().toISOString();}if(navigator.vibrate&&db.settings.vibration)navigator.vibrate([250,120,250]);beep();state.exerciseTimer=0;state.exerciseStartedAt=null;e.completed=allSetsDone(e);if(e.completed){e.duration=(e.duration||0);if(state.exerciseIndex<state.workout.exercises.length-1){state.exerciseIndex++;state.currentSetIndex=0;state.exerciseTimer=0;state.exerciseRunning=false;renderWorkout();}else{finishWorkout();}}else{state.currentSetIndex=idx+1;renderWorkout();}}
+function finishRestAndEnableNextSeries(){if(!state.restRunning)return;if(state.restInterval)clearInterval(state.restInterval);state.restInterval=null;state.restRunning=false;state.restTimer=0;const e=currentExercise(),count=exerciseSetCount(e),ex=state.workout.exercises[state.exerciseIndex],idx=Math.min(state.currentSetIndex,count-1);if(ex.sets[idx]){ex.sets[idx].done=true;ex.sets[idx].completedAt=new Date().toISOString();}if(navigator.vibrate&&db.settings.vibration)navigator.vibrate([250,120,250]);beep();state.exerciseTimer=0;state.exerciseStartedAt=null;state.exerciseOneMinuteAlerted=false;e.completed=allSetsDone(e);if(e.completed){e.duration=(e.duration||0);if(state.exerciseIndex<state.workout.exercises.length-1){state.exerciseIndex++;state.currentSetIndex=0;state.exerciseTimer=0;state.exerciseRunning=false;renderWorkout();}else{finishWorkout();}}else{state.currentSetIndex=idx+1;renderWorkout();}}
 function finishExercise(){return;}
 function pauseExerciseTimer(){return;}
 function resetExerciseTimer(){return;}
 function prevExercise(){return;}
 function renderSets(e){const count=exerciseSetCount(e);if(!count)return `<div class="empty">Configure a quantidade de séries antes de iniciar este exercício.</div>`;while(e.sets.length<count)e.sets.push({number:e.sets.length+1,reps:"",weight:"",done:false,completedAt:null});return e.sets.slice(0,count).map((s,i)=>`<div class="set-row"><span class="setnum">${i+1}</span><input value="${esc(s.reps)}" placeholder="reps" onchange="setValue(${i},'reps',this.value)"><input value="${esc(s.weight)}" placeholder="kg" inputmode="decimal" onchange="setValue(${i},'weight',this.value)"><span class="check ${s.done?'done':''}">${s.done?'✓':'○'}</span></div>`).join("");}
-function renderWorkout(){const e=currentExercise(),all=state.workout.exercises,progress=Math.round(((state.exerciseIndex+1)/all.length)*100),count=exerciseSetCount(e),doneSets=count?e.sets.slice(0,count).filter(s=>s.done).length:0,complete=allSetsDone(e),setLabel=count?`Série ${Math.min(state.currentSetIndex+1,count)} de ${count}`:"Série não configurada";layout(`<div class="workout-header"><button class="back" onclick="confirmExitWorkout()">‹ Sair</button><span class="pill">${esc(state.workout.type)}</span></div><div class="workout-progress"><div style="width:${progress}%"></div></div><div class="workout-meta"><span>Exercício ${state.exerciseIndex+1} de ${all.length}</span><b id="workoutTimer">${fmt((Date.now()-state.workoutTimerStart)/1000)}</b></div><section class="focus-card"><span class="eyebrow">${esc(e.section)}</span><h2>${esc(f2DisplayName(e.name))}</h2><div class="prescription">${e.prescribedSets||"Configure as séries"}${e.prescribedReps?` <span>×</span> ${esc(e.prescribedReps)}`:""}</div><div class="set-status">${setLabel} • ${doneSets}${count?' de '+count:''} concluída(s)</div><div class="big-timer" id="exerciseTimer">${fmt(state.exerciseTimer)}</div><div class="timer-actions"><button class="timer-start" onclick="startExerciseTimer()" ${complete||state.restRunning||state.exerciseRunning?'disabled':''}>${state.restRunning?'⏳ Descanso...':state.exerciseRunning?'⏱ Série em Execução':state.currentSetIndex>0?'▶ Iniciar Próxima Série':'▶ Iniciar Série'}</button></div>${complete?'<div class="exercise-completed">✓ Exercício concluído</div>':''}</section><section class="rest-card"><div><span class="eyebrow">DESCANSO AUTOMÁTICO</span><b id="restTimer">${fmtShort(state.restRunning?state.restTimer:30)}</b></div></section><section class="sets-card"><div class="section-title">Séries e carga</div>${renderSets(e)}</section>`,"home");if(state.exerciseRunning)startMainTick();updateTimers();}
+function renderWorkout(){const e=currentExercise(),all=state.workout.exercises,progress=Math.round(((state.exerciseIndex+1)/all.length)*100),count=exerciseSetCount(e),doneSets=count?e.sets.slice(0,count).filter(s=>s.done).length:0,complete=allSetsDone(e),canNext=complete && !state.restRunning,setLabel=count?`Série ${Math.min(state.currentSetIndex+1,count)} de ${count}`:"Série não configurada";layout(`<div class="workout-header"><button class="back" onclick="confirmExitWorkout()">‹ Sair</button><span class="pill">TREINO ${state.training}</span></div><div class="workout-progress"><div style="width:${progress}%"></div></div><div class="workout-meta"><span>Exercício ${state.exerciseIndex+1} de ${all.length}</span><b id="workoutTimer">${fmt((Date.now()-state.workoutTimerStart)/1000)}</b></div><section class="focus-card"><span class="eyebrow">${esc(e.section)}</span><h2>${esc(f2DisplayName(e.name))}</h2><div class="prescription">${e.prescribedSets||"Configure as séries"}${e.prescribedReps?` <span>×</span> ${esc(e.prescribedReps)}`:""}</div><div class="set-status">${setLabel} • ${doneSets}${count?' de '+count:''} concluída(s)</div><div class="big-timer" id="exerciseTimer">${fmt(state.exerciseTimer)}</div>
+      <div class="timer-actions"><button class="timer-start" onclick="startExerciseTimer()" ${complete||state.restRunning||state.exerciseRunning?'disabled':''}>${state.restRunning?'⏳ Descanso...':state.exerciseRunning?'⏱ Série em Execução':state.currentSetIndex>0?'▶ Iniciar Próxima Série':'▶ Iniciar Série'}</button></div>
+      
+      ${complete?'<div class="exercise-completed">✓ Exercício concluído</div>':''}
+    </section>
+    <section class="rest-card"><div><span class="eyebrow">DESCANSO AUTOMÁTICO</span><b id="restTimer">${fmtShort(state.restRunning?state.restTimer:30)}</b></div></section>
+    ${last&&last.sets?.length?`<div class="last-load">Último registro: ${last.sets.map(s=>(s.weight?s.weight+" kg":"sem carga")).join(" • ")}</div>`:""}
+    <section class="sets-card"><div class="section-title">Séries e carga</div>${renderSets(e)}</section>`,"home");if(state.exerciseRunning)startMainTick();updateTimers();}
 function setValue(i,k,v){const e=currentExercise();if(e?.sets?.[i]){e.sets[i][k]=v;}}
 function toggleSet(){return;}
 function allSetsDone(e){const count=exerciseSetCount(e);if(!count)return false;while(e.sets.length<count)e.sets.push({number:e.sets.length+1,reps:"",weight:"",done:false,completedAt:null});return e.sets.slice(0,count).every(s=>s.done);}
-function finishWorkout(){if(!state.workout)return;const done=state.workout;stopIntervals();done.totalTime=Math.round((Date.now()-state.workoutTimerStart)/1000);done.endTime=new Date().toISOString();done.completedExercises=done.exercises.filter(e=>e.completed).length;done.totalSets=done.exercises.reduce((n,e)=>n+e.sets.filter(s=>s.done).length,0);const duplicate=db.workoutHistory.some(h=>h.workoutId===done.workoutId&&h.executionDate===done.date&&Math.abs(new Date(h.completedAt)-new Date(done.endTime))<60000);if(!duplicate){db.workoutHistory.push({id:uid('hist-'),workoutId:done.workoutId,name:done.type,date:done.date,executionDate:done.date,startedAt:done.startedAt,completedAt:done.endTime,totalTime:done.totalTime,completedExercises:done.completedExercises,totalSets:done.totalSets,workoutSnapshot:cloneJSON(done)});db.workouts.push(done);save();}state.workout=null;renderCompletion(done);}
+function finishWorkout(){if(!state.workout)return;const done=state.workout;stopIntervals();done.totalTime=Math.round((Date.now()-state.workoutTimerStart)/1000);done.endTime=new Date().toISOString();done.completedExercises=done.exercises.filter(e=>e.completed).length;done.totalSets=done.exercises.reduce((n,e)=>n+e.sets.filter(s=>s.done).length,0);const duplicate=db.workoutHistory.some(h=>h.workoutId===done.id&&h.executionDate===done.date&&Math.abs(new Date(h.completedAt)-new Date(done.endTime))<60000);if(!duplicate){db.workoutHistory.push({id:uid('hist-'),workoutId:done.workoutId,name:done.type,date:done.date,executionDate:done.date,startedAt:done.startedAt,completedAt:done.endTime,totalTime:done.totalTime,completedExercises:done.completedExercises,totalSets:done.totalSets,workoutSnapshot:cloneJSON(done)});db.workouts.push(done);save();}state.workout=null;renderCompletion(done);}
 function renderCompletion(done){layout(`<section class="complete"><div class="complete-icon">✓</div><span class="eyebrow">TREINO FINALIZADO</span><h2>Excelente trabalho!</h2><p><b>${esc(done.type)}</b> concluído automaticamente em ${dateBR(done.date)}.</p><div class="summary-grid"><div><b>${fmt(done.totalTime)}</b><span>tempo total</span></div><div><b>${done.completedExercises}</b><span>exercícios</span></div><div><b>${done.totalSets}</b><span>séries</span></div></div><button class="primary full" onclick="go('calendar')">Ver no calendário</button><button class="secondary full" onclick="go('home')">Voltar ao início</button></section>`);}
 function renderCalendar(){const y=calDate.getFullYear(),m=calDate.getMonth(),first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),offset=(first+6)%7,cells=[];for(let i=0;i<offset;i++)cells.push('<div class="cal-day empty"></div>');for(let d=1;d<=days;d++){const iso=`${y}-${pad(m+1)}-${pad(d)}`,ws=(db.workoutHistory||[]).filter(w=>w.date===iso);cells.push(`<button class="cal-day ${ws.length?'has':''}" onclick="calendarDay('${iso}')"><span>${d}</span>${ws.map(w=>`<i>✓ ${esc(f2DisplayName(w.name))}</i><em>${fmtShort(w.totalTime||0)}</em>`).join("")}</button>`);}layout(`<div class="calendar-head"><button class="iconbtn" onclick="changeMonth(-1)">‹</button><h2>${monthLabel(y,m)}</h2><button class="iconbtn" onclick="changeMonth(1)">›</button></div><div class="week"><b>SEG</b><b>TER</b><b>QUA</b><b>QUI</b><b>SEX</b><b>SÁB</b><b>DOM</b></div><div class="calendar">${cells.join("")}</div>`,"calendar");}
 function calendarDay(iso){const ws=(db.workoutHistory||[]).filter(w=>w.date===iso);layout(`<button class="back" onclick="renderCalendar()">‹ Calendário</button><span class="pill">${dateBR(iso)}</span><h2>${ws.length?'Treinos realizados':'Nenhum treino registrado'}</h2>${ws.map(w=>`<button class="list-card" onclick="showWorkoutDetails('${w.id}')"><span class="badge">✓</span><div><b>${esc(f2DisplayName(w.name))}</b><small>${fmt(w.totalTime)} • ${w.completedExercises||0} exercícios • ${w.totalSets||0} séries</small></div><span>›</span></button>`).join("")} ${!ws.length?'<div class="empty big">Este dia ainda não possui treino concluído.</div>':''}`,'calendar');}
 function showWorkoutDetails(id){const h=(db.workoutHistory||[]).find(x=>x.id===id)|| (db.workouts||[]).find(x=>x.id===id);if(!h)return;const w=h.workoutSnapshot||h;layout(`<button class="back" onclick="calendarDay('${h.date}')">‹ Voltar</button><span class="pill">✓ TREINO CONCLUÍDO</span><h2>${esc(f2DisplayName(h.name||w.type))}</h2><div class="stats"><div><b>${dateBR(h.date)}</b><span>data</span></div><div><b>${fmt(h.totalTime||0)}</b><span>tempo</span></div><div><b>${h.totalSets||0}</b><span>séries</span></div></div><div class="section">${(w.exercises||[]).map((e,i)=>`<div class="exercise-row"><div><b>${i+1}. ${esc(f2DisplayName(e.name))}</b><small>${(e.sets||[]).filter(s=>s.done).length} séries concluídas</small></div></div>`).join('')}</div>`,'calendar');}
 function renderHistory(){const list=[...(db.workoutHistory||[])].reverse();layout(`<h2>Histórico</h2><p class="muted">${list.length} treino(s) concluído(s).</p>${list.length?`<div class="list">${list.map(w=>`<button class="list-card" onclick="showWorkoutDetails('${w.id}')"><span class="badge">✓</span><div><b>${esc(f2DisplayName(w.name))}</b><small>${dateBR(w.date)} • ${fmt(w.totalTime)} • ${w.completedExercises||0} exercícios</small></div><span>›</span></button>`).join('')}</div>`:'<div class="empty big">Ainda não há treinos concluídos.</div>'}`,'history');}
 function manualRegister(date,type){const w=db.myWorkouts?.find(x=>x.id===`legacy-${type}`);if(!w)return;const id=uid('hist-');db.workoutHistory.push({id,workoutId:w.id,name:w.name,date,executionDate:date,startedAt:null,completedAt:null,totalTime:0,completedExercises:workoutExerciseCount(w),totalSets:workoutSetTotal(w),manual:true,workoutSnapshot:{type:w.name,date,exercises:flattenMyWorkout(w)}});save();calendarDay(date);}
-// Home: interface compacta, sem banner, com acesso direto ao cadastro de novo treino.
-function renderHome(){
-  ensurePhase2Data();
-  const recent=[...(db.workoutHistory||[])].slice(-1)[0],
-        month=todayISO().slice(0,7),
-        count=(db.workoutHistory||[]).filter(w=>w.date.startsWith(month)).length,
-        total=(db.workoutHistory||[]).reduce((a,w)=>a+(w.totalTime||0),0);
-
-  const cards=db.myWorkouts
-    .filter(w=>w.active!==false)
-    .slice(0,3)
-    .map(f2WorkoutCard)
-    .join("");
-
-  layout(`
-    <div class="stats">
-      <div><b>${count}</b><span>treinos no mês</span></div>
-      <div><b>${fmtShort(total)}</b><span>tempo total</span></div>
-      <div><b>${recent?esc(f2DisplayName(recent.name)):'—'}</b><span>último treino</span></div>
-    </div>
-
-    <div class="home-training-head">
-      <span>Treinos disponíveis</span>
-      <button class="secondary compact home-add-btn" onclick="renderNewWorkout()" aria-label="Cadastrar novo treino" title="Novo treino">+</button>
-    </div>
-
-    <div class="training-grid">
-      ${cards||'<div class="empty big">Nenhum treino ativo.</div>'}
-    </div>
-
-    ${recent?`
-      <section class="recent">
-        <div>
-          <span class="eyebrow">ÚLTIMO TREINO</span>
-          <h3>${esc(f2DisplayName(recent.name))} • ${dateBR(recent.date)}</h3>
-          <p>${fmt(recent.totalTime||0)} • ${recent.completedExercises||0} exercícios</p>
-        </div>
-        <button class="secondary" onclick="showWorkoutDetails('${recent.id}')">Detalhes</button>
-      </section>
-    `:''}
-  `,'home');
-}
 
