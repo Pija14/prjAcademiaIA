@@ -1,4 +1,13 @@
 
+## v49 — Ajustes de navegação, calendário, IA e cards
+
+- Removido o subtítulo visual "Meu Treino" abaixo de "CONTROLE DE TREINO".
+- Ajustado o calendário para conter nomes longos de treino dentro das células.
+- Refinado o botão "Planejar com IA" com ícone SVG local e hierarquia visual consistente.
+- Removida a marca d'água dos cards de Treinos e reduzido o destaque tipográfico do nome.
+- Removida a etiqueta textual "TREINO CONCLUÍDO" dos detalhes.
+- Reorganizada a data na listagem de treinos realizados, integrada ao conjunto de metadados do card.
+
 ## v48 — Backend de IA com OpenAI
 
 - Backend configurado para usar OpenAI como provedor padrão.

@@ -490,7 +490,7 @@ function layout(content, active="home"){
   if(!app) throw new Error("Elemento #app não encontrado.");
   app.innerHTML = `
   <div class="shell">
-    <header class="topbar"><div><div class="eyebrow">CONTROLE DE TREINO</div><h1>Meu Treino</h1></div>
+    <header class="topbar"><div><div class="eyebrow">CONTROLE DE TREINO</div></div>
       <div class="topbar-actions">${active==='trainings'?'<button class="iconbtn top-add" onclick="renderNewWorkout()" aria-label="Novo treino" title="Novo treino"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>':''}<button class="iconbtn" onclick="openSettings()" aria-label="Configurações" title="Configurações"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"></path><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.1h-2.6V20a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1A1.7 1.7 0 0 0 8 15a1.7 1.7 0 0 0-1.6-1H6v-2.6h.1A1.7 1.7 0 0 0 8 10a1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6v-.1H15v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1V14h-.1a1.7 1.7 0 0 0-1.6 1Z"></path></svg></button></div>
     </header>
     <main>${content}</main>
@@ -991,18 +991,6 @@ function f2WorkoutCard(w){
         </div>
       </div>
 
-      <div class="f2-card-watermark" aria-hidden="true">
-        <svg viewBox="0 0 180 180" focusable="false">
-          <g>
-            <rect x="72" y="12" width="36" height="156" rx="18"></rect>
-            <rect x="42" y="28" width="28" height="124" rx="14"></rect>
-            <rect x="110" y="28" width="28" height="124" rx="14"></rect>
-            <rect x="18" y="48" width="18" height="84" rx="9"></rect>
-            <rect x="144" y="48" width="18" height="84" rx="9"></rect>
-          </g>
-        </svg>
-      </div>
-
       <div class="card-actions f2-card-actions">
         <button class="primary f2-start-action"
           onclick="event.stopPropagation();startWorkoutById('${w.id}')"
@@ -1036,7 +1024,7 @@ function renderTrainings(){
   ensurePhase2Data();
   const cards=db.myWorkouts.filter(w=>w.active!==false).map(f2WorkoutCard).join("");
   const aiAction=aiPlanningIsConfigured()
-    ? `<button class="secondary ai-planning-button" onclick="renderAiPlanner()">✨ Planejar com IA</button>`
+    ? `<button class="secondary ai-planning-button" onclick="renderAiPlanner()"><span class="ai-button-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 13.7 9.3 20 11l-6.3 1.7L12 19l-1.7-6.3L4 11l6.3-1.7Z"></path><path d="m18.5 3 .6 2.1L21 5.7l-1.9.6-.6 2.2-.6-2.2-1.9-.6 1.9-.6Z"></path></svg></span><span>Planejar com IA</span></button>`
     : `<div class="ai-planning-unavailable">✨ Planejamento com IA indisponível. Configure <code>config.js</code> para ativar.</div>`;
   layout(`${aiAction}<div class="training-grid">${cards||'<div class="empty big">Nenhum treino ativo.</div>'}</div>`,"trainings");
 }
@@ -1219,8 +1207,8 @@ function finishWorkout(){if(!state.workout)return;const done=state.workout;stopI
 function renderCompletion(done){layout(`<section class="complete"><div class="complete-icon">✓</div><span class="eyebrow">TREINO FINALIZADO</span><h2>Excelente trabalho!</h2><p><b>${esc(done.type)}</b> concluído automaticamente em ${dateBR(done.date)}.</p><div class="summary-grid"><div><b>${fmt(done.totalTime)}</b><span>tempo total</span></div><div><b>${done.completedExercises}</b><span>exercícios</span></div><div><b>${done.totalSets}</b><span>séries</span></div></div><button class="primary full" onclick="go('calendar')">Ver no calendário</button><button class="secondary full" onclick="go('home')">Voltar ao início</button></section>`);}
 function renderCalendar(){const y=calDate.getFullYear(),m=calDate.getMonth(),first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),offset=(first+6)%7,cells=[];for(let i=0;i<offset;i++)cells.push('<div class="cal-day empty"></div>');for(let d=1;d<=days;d++){const iso=`${y}-${pad(m+1)}-${pad(d)}`,ws=(db.workoutHistory||[]).filter(w=>w.date===iso);cells.push(`<button class="cal-day ${ws.length?'has':''}" onclick="calendarDay('${iso}')"><span>${d}</span>${ws.map(w=>`<i>✓ ${esc(f2DisplayName(w.name))}</i><em>${fmtShort(w.totalTime||0)}</em>`).join("")}</button>`);}layout(`<div class="calendar-head"><button class="iconbtn" onclick="changeMonth(-1)" aria-label="Mês anterior" title="Mês anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"></path></svg></button><h2>${monthLabel(y,m)}</h2><button class="iconbtn" onclick="changeMonth(1)" aria-label="Próximo mês" title="Próximo mês"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"></path></svg></button></div><div class="week"><b>SEG</b><b>TER</b><b>QUA</b><b>QUI</b><b>SEX</b><b>SÁB</b><b>DOM</b></div><div class="calendar">${cells.join("")}</div>`,"calendar");}
 function calendarDay(iso){const ws=(db.workoutHistory||[]).filter(w=>w.date===iso);layout(`<button class="back" onclick="renderCalendar()"><span class="back-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"></path></svg></span><span>Calendário</span></button><span class="pill">${dateBR(iso)}</span><h2>${ws.length?'Treinos realizados':'Nenhum treino registrado'}</h2>${ws.map(w=>`<button class="list-card" onclick="showWorkoutDetails('${w.id}')"><span class="badge">✓</span><div><b>${esc(f2DisplayName(w.name))}</b><small>${fmt(w.totalTime)} • ${w.completedExercises||0} exercícios • ${w.totalSets||0} séries</small></div><span>›</span></button>`).join("")} ${!ws.length?'<div class="empty big">Este dia ainda não possui treino concluído.</div>':''}`,'calendar');}
-function showWorkoutDetails(id){const h=(db.workoutHistory||[]).find(x=>x.id===id)|| (db.workouts||[]).find(x=>x.id===id);if(!h)return;const w=h.workoutSnapshot||h;layout(`<button class="back" onclick="calendarDay('${h.date}')"><span class="back-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"></path></svg></span><span>Voltar</span></button><span class="pill">✓ TREINO CONCLUÍDO</span><h2>${esc(f2DisplayName(h.name||w.type))}</h2><div class="stats"><div><b>${dateBR(h.date)}</b><span>data</span></div><div><b>${fmt(h.totalTime||0)}</b><span>tempo</span></div><div><b>${h.totalSets||0}</b><span>séries</span></div></div><div class="section">${(w.exercises||[]).map((e,i)=>`<div class="exercise-row"><div><b>${i+1}. ${esc(f2DisplayName(e.name))}</b><small>${(e.sets||[]).filter(s=>s.done).length} séries concluídas</small></div></div>`).join('')}</div>`,'calendar');}
-function renderHistory(){const list=[...(db.workoutHistory||[])].reverse();layout(`<h2>Histórico</h2><p class="muted">${list.length} treino(s) concluído(s).</p>${list.length?`<div class="list">${list.map(w=>`<button class="list-card" onclick="showWorkoutDetails('${w.id}')"><span class="badge">✓</span><div><b>${esc(f2DisplayName(w.name))}</b><small>${dateBR(w.date)} • ${fmt(w.totalTime)} • ${w.completedExercises||0} exercícios</small></div><span>›</span></button>`).join('')}</div>`:'<div class="empty big">Ainda não há treinos concluídos.</div>'}`,'history');}
+function showWorkoutDetails(id){const h=(db.workoutHistory||[]).find(x=>x.id===id)|| (db.workouts||[]).find(x=>x.id===id);if(!h)return;const w=h.workoutSnapshot||h;layout(`<button class="back" onclick="calendarDay('${h.date}')"><span class="back-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"></path></svg></span><span>Voltar</span></button><h2>${esc(f2DisplayName(h.name||w.type))}</h2><div class="stats"><div><b>${dateBR(h.date)}</b><span>data</span></div><div><b>${fmt(h.totalTime||0)}</b><span>tempo</span></div><div><b>${h.totalSets||0}</b><span>séries</span></div></div><div class="section">${(w.exercises||[]).map((e,i)=>`<div class="exercise-row"><div><b>${i+1}. ${esc(f2DisplayName(e.name))}</b><small>${(e.sets||[]).filter(s=>s.done).length} séries concluídas</small></div></div>`).join('')}</div>`,'calendar');}
+function renderHistory(){const list=[...(db.workoutHistory||[])].reverse();layout(`<h2>Histórico</h2><p class="muted">${list.length} treino(s) concluído(s).</p>${list.length?`<div class="list">${list.map(w=>`<button class="list-card history-card" onclick="showWorkoutDetails('${w.id}')"><span class="badge">✓</span><div class="history-card-content"><b>${esc(f2DisplayName(w.name))}</b><div class="history-card-meta"><span class="history-card-date">${dateBR(w.date)}</span><span>${fmt(w.totalTime)}</span><span>${w.completedExercises||0} exercícios</span></div></div><span class="list-chevron">›</span></button>`).join('')}</div>`:'<div class="empty big">Ainda não há treinos concluídos.</div>'}`,'history');}
 function manualRegister(date,type){const w=db.myWorkouts?.find(x=>x.id===`legacy-${type}`);if(!w)return;const id=uid('hist-');db.workoutHistory.push({id,workoutId:w.id,name:w.name,date,executionDate:date,startedAt:null,completedAt:null,totalTime:0,completedExercises:workoutExerciseCount(w),totalSets:workoutSetTotal(w),manual:true,workoutSnapshot:{type:w.name,date,exercises:flattenMyWorkout(w)}});save();calendarDay(date);}
 function renderDashboard(){
   const recent=db.workouts[db.workouts.length-1];

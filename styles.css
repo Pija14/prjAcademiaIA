@@ -1977,3 +1977,134 @@ h3 {
     grid-template-columns: 1fr;
   }
 }
+
+/* v49 — refinamentos de navegação, calendário, IA e histórico */
+.topbar > div:first-child {
+  min-width: 0;
+}
+
+.topbar .eyebrow {
+  margin-bottom: 0;
+}
+
+.f2-card h3 {
+  font-size: var(--text-lg);
+}
+
+.f2-card-watermark {
+  display: none;
+}
+
+.ai-planning-button {
+  min-height: var(--control-lg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid var(--accent-soft-strong);
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-weight: var(--weight-bold);
+  transition: transform var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.ai-planning-button:hover {
+  background: var(--accent-soft-strong);
+  border-color: var(--accent-deep);
+  transform: translateY(-1px);
+}
+
+.ai-planning-button:active {
+  transform: translateY(0);
+}
+
+.ai-button-icon {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 22px;
+}
+
+.ai-button-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+  stroke: none;
+}
+
+.cal-day {
+  min-height: 72px;
+  justify-content: flex-start;
+}
+
+.cal-day span {
+  flex: 0 0 auto;
+}
+
+.cal-day i,
+.cal-day em {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.history-card {
+  align-items: center;
+}
+
+.history-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.history-card-content b {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: var(--lh-tight);
+}
+
+.history-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-2xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.history-card-meta span + span::before {
+  content: "•";
+  margin-right: var(--space-2);
+  color: var(--line-strong);
+}
+
+.history-card-date {
+  font-weight: var(--weight-bold);
+  color: var(--ink-soft);
+}
+
+.list-chevron {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: var(--text-xl);
+  line-height: 1;
+}
+
+@media (max-width: 360px) {
+  .cal-day {
+    min-height: 68px;
+    padding-left: var(--space-1);
+    padding-right: var(--space-1);
+  }
+
+  .history-card-meta {
+    gap: var(--space-1);
+  }
+
+  .history-card-meta span + span::before {
+    margin-right: var(--space-1);
+  }
+}
