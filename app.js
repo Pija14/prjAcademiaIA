@@ -119,8 +119,8 @@ window.ExerciseLibrary = {
 
 document.addEventListener("DOMContentLoaded", () => {
   exerciseDBSeedFromCurrentData().catch(err => console.warn("Biblioteca de exercícios:", err));
+  bootApp();
 });
-
 
 // === Regras de execução do treino ===
 const DEFAULT_REST_SECONDS = 30;
