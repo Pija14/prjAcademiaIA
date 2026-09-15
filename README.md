@@ -1,3 +1,11 @@
+## v45 — Meta semanal e refinamento das configurações
+
+- Removida a região visual de Preferências da tela de Configurações.
+- Adicionada Meta semanal de 1 a 7 dias de treino por semana.
+- Meta semanal persistida no armazenamento local e aplicada ao resumo da tela inicial.
+- Alterados os títulos para “Duração”, “Exercício” e “Descanso”.
+- Cache e query strings atualizados para v45.
+
 ## v44 — Repetições bloqueadas e carga editável
 
 - Campo de repetições/séries bloqueado na execução do exercício.

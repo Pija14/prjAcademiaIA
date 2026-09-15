@@ -242,7 +242,7 @@ const DEFAULTS = {
   users: [],
   currentUserId: null,
   ownerId: null,
-  settings: {rest:30, exerciseDuration:60, restDuration:30, sound:true, vibration:true, theme:"light"},
+  settings: {rest:30, exerciseDuration:60, restDuration:30, weeklyGoal:4, sound:true, vibration:true, theme:"light"},
   excludedExercises: {A:[],B:[],C:[]},
   customExercises: {A:[],B:[],C:[]},
   workoutPlans: {A:null,B:null,C:null},
@@ -267,6 +267,7 @@ if(!db.settings || typeof db.settings!=="object") db.settings=JSON.parse(JSON.st
 if(!Number.isFinite(Number(db.settings.exerciseDuration)) || Number(db.settings.exerciseDuration)<=0) db.settings.exerciseDuration=60;
 if(!Number.isFinite(Number(db.settings.restDuration)) || Number(db.settings.restDuration)<=0) db.settings.restDuration=30;
 if(!Number.isFinite(Number(db.settings.rest)) || Number(db.settings.rest)<=0) db.settings.rest=db.settings.restDuration;
+if(!Number.isInteger(Number(db.settings.weeklyGoal)) || Number(db.settings.weeklyGoal)<1 || Number(db.settings.weeklyGoal)>7) db.settings.weeklyGoal=4;
 ["A","B","C"].forEach(k=>{
   if(!Array.isArray(db.excludedExercises[k])) db.excludedExercises[k]=[];
   if(!Array.isArray(db.customExercises[k])) db.customExercises[k]=[];
@@ -519,10 +520,17 @@ function renderHome(){
   const user = getCurrentUser();
   const recent=db.workouts[db.workouts.length-1];
   const month=todayISO().slice(0,7);
+  const today=new Date();
+  const weekStart=new Date(today);
+  const day=(weekStart.getDay()+6)%7;
+  weekStart.setDate(weekStart.getDate()-day);
+  weekStart.setHours(0,0,0,0);
+  const weekStartISO=`${weekStart.getFullYear()}-${pad(weekStart.getMonth()+1)}-${pad(weekStart.getDate())}`;
+  const weeklyTarget=Number(db.settings.weeklyGoal)||4;
+  const weeklyCount=db.workouts.filter(w=>w.date>=weekStartISO && w.date<=todayISO()).length;
   const count=db.workouts.filter(w=>w.date.startsWith(month)).length;
   const total=db.workouts.reduce((a,w)=>a+(w.totalTime||0),0);
-  const weeklyTarget = 4;
-  const weeklyProgress = Math.min(100, Math.round((count / weeklyTarget) * 100));
+  const weeklyProgress=Math.min(100,Math.round((weeklyCount/weeklyTarget)*100));
   const workoutsByType = db.myWorkouts.map(w => ({
     code: f2DisplayName(w.name),
     name: `${workoutExerciseCount(w)} exercícios`,
@@ -546,8 +554,8 @@ function renderHome(){
         </div>
         <span class="dashboard-chip">${weeklyProgress}%</span>
       </div>
-      <p>Você está ${weeklyProgress}% do objetivo semanal.</p>
-      <div class="dashboard-goal"><span>Meta</span><strong>${weeklyTarget} treinos / semana</strong></div>
+      <p>Você fez ${weeklyCount} de ${weeklyTarget} treinos nesta semana.</p>
+      <div class="dashboard-goal"><span>Meta semanal</span><strong>${weeklyTarget} ${weeklyTarget===1?"treino":"treinos"}</strong></div>
       <div class="progress-bar"><span style="width:${weeklyProgress}%"></span></div>
     </div>
 
@@ -829,13 +837,17 @@ function confirmExitWorkout(){
 function saveTrainingSettings(){
   const exerciseInput=document.getElementById("settingExerciseDuration");
   const restInput=document.getElementById("settingRestDuration");
+  const goalInput=document.getElementById("settingWeeklyGoal");
   const exercise=Number.parseInt(exerciseInput?.value,10);
   const rest=Number.parseInt(restInput?.value,10);
+  const weeklyGoal=Number.parseInt(goalInput?.value,10);
   if(!Number.isFinite(exercise)||exercise<5||exercise>600){alert("Informe uma duração de exercício entre 5 e 600 segundos.");exerciseInput?.focus();return;}
   if(!Number.isFinite(rest)||rest<5||rest>600){alert("Informe um descanso entre 5 e 600 segundos.");restInput?.focus();return;}
+  if(!Number.isInteger(weeklyGoal)||weeklyGoal<1||weeklyGoal>7){alert("Informe uma meta semanal entre 1 e 7 dias.");goalInput?.focus();return;}
   db.settings.exerciseDuration=exercise;
   db.settings.restDuration=rest;
   db.settings.rest=rest;
+  db.settings.weeklyGoal=weeklyGoal;
   save();
   openSettings();
 }
@@ -843,18 +855,19 @@ function openSettings(){
   const user=getCurrentUser();
   const exerciseDuration=getExerciseDuration();
   const restDuration=getRestDuration();
+  const weeklyGoal=Number(db.settings.weeklyGoal)||4;
   layout(`<button class="back" onclick="go('home')"><span class="back-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"></path></svg></span><span>Voltar</span></button><h2>Configurações</h2>
     <section class="settings-card">
-      <h3>Preferências</h3>
-      <label class="switch">Vibração <input type="checkbox" ${db.settings.vibration?'checked':''} onchange="db.settings.vibration=this.checked;save()"></label>
-      <label class="switch">Som <input type="checkbox" ${db.settings.sound?'checked':''} onchange="db.settings.sound=this.checked;save()"></label>
+      <h3>Meta semanal</h3>
+      <p class="muted">Defina quantos dias por semana você pretende treinar.</p>
+      <label>Meta semanal<select id="settingWeeklyGoal">${[1,2,3,4,5,6,7].map(n=>`<option value="${n}" ${n===weeklyGoal?'selected':''}>${n} ${n===1?'dia':'dias'} por semana</option>`).join('')}</select></label>
     </section>
     <section class="settings-card">
-      <h3>Tempos do treino</h3>
-      <p class="muted">Defina quanto tempo dura cada série e o intervalo automático entre séries.</p>
+      <h3>Duração</h3>
+      <p class="muted">Defina quanto tempo dura cada exercício e o intervalo automático entre exercícios.</p>
       <div class="settings-time-grid">
-        <label>Duração do exercício<input id="settingExerciseDuration" type="number" min="5" max="600" step="1" value="${exerciseDuration}" inputmode="numeric" autocomplete="off"><span class="field-unit">segundos</span></label>
-        <label>Duração do descanso<input id="settingRestDuration" type="number" min="5" max="600" step="1" value="${restDuration}" inputmode="numeric" autocomplete="off"><span class="field-unit">segundos</span></label>
+        <label>Exercício<input id="settingExerciseDuration" type="number" min="5" max="600" step="1" value="${exerciseDuration}" inputmode="numeric" autocomplete="off"><span class="field-unit">segundos</span></label>
+        <label>Descanso<input id="settingRestDuration" type="number" min="5" max="600" step="1" value="${restDuration}" inputmode="numeric" autocomplete="off"><span class="field-unit">segundos</span></label>
       </div>
       <button class="primary full" onclick="saveTrainingSettings()">Salvar configurações</button>
     </section>
