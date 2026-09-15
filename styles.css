@@ -1885,3 +1885,56 @@ h3 {
 .exercise-disabled {
   opacity: .58;
 }
+
+/* v42 — configurações de tempo */
+.settings-time-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.settings-time-grid label {
+  position: relative;
+}
+
+.settings-time-grid input {
+  padding-right: 76px;
+  font-variant-numeric: tabular-nums;
+}
+
+.field-unit {
+  position: absolute;
+  right: var(--space-4);
+  bottom: 14px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  pointer-events: none;
+}
+
+.set-row input {
+  min-width: 0;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.set-row input:focus-visible {
+  border-color: var(--accent);
+  outline: 3px solid var(--accent-soft);
+  outline-offset: 2px;
+}
+
+@media (max-width: 360px) {
+  .settings-time-grid {
+    grid-template-columns: 1fr;
+  }
+}

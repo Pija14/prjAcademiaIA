@@ -118,6 +118,7 @@ window.ExerciseLibrary = {
 };
 
 // === Regras de execução do treino ===
+const DEFAULT_EXERCISE_SECONDS = 60;
 const DEFAULT_REST_SECONDS = 30;
 let restAlertTriggered = false;
 
@@ -241,7 +242,7 @@ const DEFAULTS = {
   users: [],
   currentUserId: null,
   ownerId: null,
-  settings: {rest:30, sound:true, vibration:true, theme:"light"},
+  settings: {rest:30, exerciseDuration:60, restDuration:30, sound:true, vibration:true, theme:"light"},
   excludedExercises: {A:[],B:[],C:[]},
   customExercises: {A:[],B:[],C:[]},
   workoutPlans: {A:null,B:null,C:null},
@@ -262,6 +263,10 @@ if(!db.workoutPlans) db.workoutPlans = {A:null,B:null,C:null};
 if(!db.workoutNames) db.workoutNames = {A:"Treino A",B:"Treino B",C:"Treino C"};
 if(!Array.isArray(db.workoutHistory)) db.workoutHistory = [];
 if(!Array.isArray(db.workouts)) db.workouts = [];
+if(!db.settings || typeof db.settings!=="object") db.settings=JSON.parse(JSON.stringify(DEFAULTS.settings));
+if(!Number.isFinite(Number(db.settings.exerciseDuration)) || Number(db.settings.exerciseDuration)<=0) db.settings.exerciseDuration=60;
+if(!Number.isFinite(Number(db.settings.restDuration)) || Number(db.settings.restDuration)<=0) db.settings.restDuration=30;
+if(!Number.isFinite(Number(db.settings.rest)) || Number(db.settings.rest)<=0) db.settings.rest=db.settings.restDuration;
 ["A","B","C"].forEach(k=>{
   if(!Array.isArray(db.excludedExercises[k])) db.excludedExercises[k]=[];
   if(!Array.isArray(db.customExercises[k])) db.customExercises[k]=[];
@@ -807,9 +812,11 @@ function beep(){
     o.start(); o.stop(c.currentTime+.18);
   }catch(e){}
 }
+function getExerciseDuration(){const n=Number(db.settings?.exerciseDuration);return Number.isFinite(n)&&n>0?n:DEFAULT_EXERCISE_SECONDS;}
+function getRestDuration(){const n=Number(db.settings?.restDuration ?? db.settings?.rest);return Number.isFinite(n)&&n>0?n:DEFAULT_REST_SECONDS;}
 function updateTimers(){
   const a=document.getElementById("exerciseTimer"); if(a)a.textContent=fmt(state.exerciseTimer);
-  const b=document.getElementById("restTimer"); if(b)b.textContent=fmtShort(state.restRunning?state.restTimer:DEFAULT_REST_SECONDS);
+  const b=document.getElementById("restTimer"); if(b)b.textContent=fmtShort(state.restRunning?state.restTimer:getRestDuration());
   const c=document.getElementById("workoutTimer"); if(c&&state.workoutTimerStart)c.textContent=fmt((Date.now()-state.workoutTimerStart)/1000);
 }
 function confirmExitWorkout(){
@@ -819,23 +826,42 @@ function confirmExitWorkout(){
 /* =========================================================
    CONFIGURAÇÕES E BACKUP
    ========================================================= */
+function saveTrainingSettings(){
+  const exerciseInput=document.getElementById("settingExerciseDuration");
+  const restInput=document.getElementById("settingRestDuration");
+  const exercise=Number.parseInt(exerciseInput?.value,10);
+  const rest=Number.parseInt(restInput?.value,10);
+  if(!Number.isFinite(exercise)||exercise<5||exercise>600){alert("Informe uma duração de exercício entre 5 e 600 segundos.");exerciseInput?.focus();return;}
+  if(!Number.isFinite(rest)||rest<5||rest>600){alert("Informe um descanso entre 5 e 600 segundos.");restInput?.focus();return;}
+  db.settings.exerciseDuration=exercise;
+  db.settings.restDuration=rest;
+  db.settings.rest=rest;
+  save();
+  openSettings();
+}
 function openSettings(){
   const user=getCurrentUser();
+  const exerciseDuration=getExerciseDuration();
+  const restDuration=getRestDuration();
   layout(`<button class="back" onclick="go('home')"><span class="back-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"></path></svg></span><span>Voltar</span></button><h2>Configurações</h2>
     <section class="settings-card">
+      <h3>Preferências</h3>
       <label class="switch">Vibração <input type="checkbox" ${db.settings.vibration?'checked':''} onchange="db.settings.vibration=this.checked;save()"></label>
       <label class="switch">Som <input type="checkbox" ${db.settings.sound?'checked':''} onchange="db.settings.sound=this.checked;save()"></label>
-      <p class="muted">A série dura 60 segundos e o descanso automático, ${DEFAULT_REST_SECONDS} segundos.</p>
+    </section>
+    <section class="settings-card">
+      <h3>Tempos do treino</h3>
+      <p class="muted">Defina quanto tempo dura cada série e o intervalo automático entre séries.</p>
+      <div class="settings-time-grid">
+        <label>Duração do exercício<input id="settingExerciseDuration" type="number" min="5" max="600" step="1" value="${exerciseDuration}" inputmode="numeric" autocomplete="off"><span class="field-unit">segundos</span></label>
+        <label>Duração do descanso<input id="settingRestDuration" type="number" min="5" max="600" step="1" value="${restDuration}" inputmode="numeric" autocomplete="off"><span class="field-unit">segundos</span></label>
+      </div>
+      <button class="primary full" onclick="saveTrainingSettings()">Salvar configurações</button>
     </section>
     <section class="settings-card"><h3>Conta</h3>
       <p class="muted">Conectado como <b>${esc(user?.name||"—")}</b>${user?.email?` • ${esc(user.email)}`:""}</p>
       <button class="secondary full" onclick="logoutUser()">Sair da conta</button>
-    </section>
-    <section class="settings-card"><h3>Dados</h3>
-      <button class="secondary full" onclick="exportData()">Exportar dados</button>
-      <label class="filebtn">Importar dados<input type="file" accept=".json" onchange="importData(this.files[0])"></label>
-      <button class="danger full" onclick="clearData()">Apagar histórico</button>
-    </section>`,"home");
+    </section>`);
 }
 function exportData(){
   const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
@@ -1156,8 +1182,8 @@ function changeMonth(delta){ calDate=new Date(calDate.getFullYear(),calDate.getM
 function f2CurrentSet(){const e=currentExercise(),count=exerciseSetCount(e);if(!count)return null;while(e.sets.length<count)e.sets.push({number:e.sets.length+1,reps:"",weight:"",done:false,completedAt:null});return e.sets[Math.min(state.currentSetIndex,count-1)];}
 function exerciseReadyForStart(exercise){const count=exerciseSetCount(exercise);if(!count)return {ok:false,message:"Configure a quantidade de séries para este exercício."};const ex=state.workout?.exercises?.[state.exerciseIndex];if(!ex)return {ok:false,message:"Exercício inválido."};const idx=Math.min(Math.max(state.currentSetIndex,0),count-1),set=ex.sets?.[idx]||{reps:"",weight:""};if(!String(set.weight??"").trim())return {ok:false,message:`Informe a carga da série ${idx+1} antes de iniciar.`};if(!String(set.reps??"").trim())return {ok:false,message:`Informe as repetições da série ${idx+1} antes de iniciar.`};return {ok:true,index:idx};}
 function startExerciseTimer(){if(state.restRunning||state.exerciseRunning)return;const e=currentExercise();if(allSetsDone(e))return;const ready=exerciseReadyForStart(e);if(!ready.ok){alert(ready.message);return;}state.currentSetIndex=ready.index;state.exerciseTimer=0;state.exerciseRunning=true;state.exerciseStartedAt=Date.now();startMainTick();renderWorkout();}
-function startMainTick(){if(state.timerInterval)clearInterval(state.timerInterval);state.timerInterval=setInterval(()=>{if(state.exerciseRunning&&state.exerciseStartedAt){state.exerciseTimer=(Date.now()-state.exerciseStartedAt)/1000;if(state.exerciseTimer>=60){state.exerciseTimer=60;state.exerciseRunning=false;state.exerciseStartedAt=null;clearInterval(state.timerInterval);state.timerInterval=null;if(navigator.vibrate&&db.settings.vibration)navigator.vibrate([250,120,250]);beep();startRest();return;}}updateTimers();},100);}
-function startRest(){if(state.restRunning)return;const e=currentExercise(),count=exerciseSetCount(e);if(!count)return;const ex=state.workout.exercises[state.exerciseIndex];while(ex.sets.length<count)ex.sets.push({number:ex.sets.length+1,reps:"",weight:"",done:false,completedAt:null});state.restRunning=true;state.restTimer=30;if(state.restInterval)clearInterval(state.restInterval);state.restInterval=setInterval(()=>{state.restTimer-=1;updateTimers();if(state.restTimer<=0)finishRestAndEnableNextSeries();},1000);renderWorkout();}
+function startMainTick(){if(state.timerInterval)clearInterval(state.timerInterval);state.timerInterval=setInterval(()=>{if(state.exerciseRunning&&state.exerciseStartedAt){state.exerciseTimer=(Date.now()-state.exerciseStartedAt)/1000;if(state.exerciseTimer>=getExerciseDuration()){state.exerciseTimer=getExerciseDuration();state.exerciseRunning=false;state.exerciseStartedAt=null;clearInterval(state.timerInterval);state.timerInterval=null;if(navigator.vibrate&&db.settings.vibration)navigator.vibrate([250,120,250]);beep();startRest();return;}}updateTimers();},100);}
+function startRest(){if(state.restRunning)return;const e=currentExercise(),count=exerciseSetCount(e);if(!count)return;const ex=state.workout.exercises[state.exerciseIndex];while(ex.sets.length<count)ex.sets.push({number:ex.sets.length+1,reps:"",weight:"",done:false,completedAt:null});state.restRunning=true;state.restTimer=getRestDuration();if(state.restInterval)clearInterval(state.restInterval);state.restInterval=setInterval(()=>{state.restTimer-=1;updateTimers();if(state.restTimer<=0)finishRestAndEnableNextSeries();},1000);renderWorkout();}
 function stopRest(){return;}
 function finishRestAndEnableNextSeries(){if(!state.restRunning)return;if(state.restInterval)clearInterval(state.restInterval);state.restInterval=null;state.restRunning=false;state.restTimer=0;const e=currentExercise(),count=exerciseSetCount(e),ex=state.workout.exercises[state.exerciseIndex],idx=Math.min(state.currentSetIndex,count-1);if(ex.sets[idx]){ex.sets[idx].done=true;ex.sets[idx].completedAt=new Date().toISOString();}if(navigator.vibrate&&db.settings.vibration)navigator.vibrate([250,120,250]);beep();state.exerciseTimer=0;state.exerciseStartedAt=null;state.exerciseOneMinuteAlerted=false;e.completed=allSetsDone(e);if(e.completed){e.duration=(e.duration||0);if(state.exerciseIndex<state.workout.exercises.length-1){state.exerciseIndex++;state.currentSetIndex=0;state.exerciseTimer=0;state.exerciseRunning=false;renderWorkout();}else{finishWorkout();}}else{state.currentSetIndex=idx+1;renderWorkout();}}
 function finishExercise(){return;}
@@ -1170,7 +1196,7 @@ function renderWorkout(){const e=currentExercise(),all=state.workout.exercises,l
       
       ${complete?'<div class="exercise-completed">✓ Exercício concluído</div>':''}
     </section>
-    <section class="rest-card"><div><span class="eyebrow">DESCANSO AUTOMÁTICO</span><b id="restTimer">${fmtShort(state.restRunning?state.restTimer:30)}</b></div></section>
+    <section class="rest-card"><div><span class="eyebrow">DESCANSO AUTOMÁTICO</span><b id="restTimer">${fmtShort(state.restRunning?state.restTimer:getRestDuration())}</b></div></section>
     ${last&&last.sets?.length?`<div class="last-load">Último registro: ${last.sets.map(s=>(s.weight?s.weight+" kg":"sem carga")).join(" • ")}</div>`:""}
     <section class="sets-card"><div class="section-title">Séries e carga</div>${renderSets(e)}</section>`,"home");if(state.exerciseRunning)startMainTick();updateTimers();}
 function setValue(i,k,v){const e=currentExercise();if(e?.sets?.[i]){e.sets[i][k]=v;}}

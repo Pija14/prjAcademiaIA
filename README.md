@@ -1,3 +1,11 @@
+## v42 — Configurações de tempo e campos de execução
+
+- Campos de séries, repetições e carga padronizados para edição confortável no celular.
+- Campo de carga/Kg com foco e área de toque adequados.
+- Adicionadas configurações manuais para duração do exercício e descanso.
+- Tempos configurados são persistidos no armazenamento local e utilizados pelos cronômetros.
+- Mantidos os padrões de 60 segundos para exercício e 30 segundos para descanso quando não houver configuração anterior.
+- Removida a região visual Dados da tela de Configurações.
 
 ## v41 — Refinamento da tela inicial e edição
 
