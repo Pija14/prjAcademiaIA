@@ -286,6 +286,7 @@ if(!db.workoutNames) db.workoutNames = {A:"Treino A",B:"Treino B",C:"Treino C"};
   if(!Array.isArray(db.customExercises[k])) db.customExercises[k]=[];
 });
 let state = { page:"home", training:null, exerciseIndex:0, workout:null, exerciseTimer:0, exerciseOneMinuteAlerted:false, exerciseRunning:false, exerciseStartedAt:null, currentSetIndex:0, restTimer:0, restRunning:false, timerInterval:null, restInterval:null };
+let authMode = "login";
 
 function uid(prefix="id"){ return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2,8)}`; }
 function normalizeEmail(value){ return String(value || "").trim().toLowerCase(); }
@@ -327,6 +328,20 @@ function getOwnerUser(){
   ensureAuthState();
   return db.users.find(u => u.id === db.ownerId) || db.users[0] || null;
 }
+function registerUserAccount(name, email, password=""){
+  ensureAuthState();
+  const safeName = String(name || "").trim();
+  const normalized = normalizeEmail(email);
+  if(!safeName){ alert("Informe o nome do usuário."); return false; }
+  if(!normalized){ alert("Informe o e-mail do usuário."); return false; }
+  if(db.users.some(u => normalizeEmail(u.email) === normalized)){ alert("Este e-mail já está cadastrado."); return false; }
+  const user = { id: uid("user"), name: safeName, email: normalized, password: String(password || "").trim(), createdAt: new Date().toISOString() };
+  db.users.push(user);
+  db.currentUserId = user.id;
+  save();
+  authMode = "login";
+  return true;
+}
 function loginWithEmail(email, password=""){
   ensureAuthState();
   const normalized = normalizeEmail(email);
@@ -349,6 +364,7 @@ function loginWithEmail(email, password=""){
   return false;
 }
 function logoutUser(){
+  authMode = "login";
   db.currentUserId = null; save(); renderAuthScreen();
 }
 function handleLoginSubmit(event){
@@ -360,28 +376,68 @@ function handleLoginSubmit(event){
   }
   return false;
 }
+function handleRegisterSubmit(event){
+  event.preventDefault();
+  const name = document.getElementById("register-name")?.value || "";
+  const email = document.getElementById("register-email")?.value || "";
+  const password = document.getElementById("register-password")?.value || "";
+  if(registerUserAccount(name, email, password)){
+    renderHome();
+  }
+  return false;
+}
+function toggleAuthMode(mode){
+  authMode = mode;
+  renderAuthScreen();
+}
 function renderAuthScreen(){
   const ownerUser = getOwnerUser();
   const ownerEmail = ownerUser?.email || "rafaellouzadaa@gmail.com";
   const app = document.getElementById("app");
   if(!app) return;
+  const isLogin = authMode !== "register";
   app.innerHTML = `
     <div class="auth-shell">
       <div class="auth-card">
         <div class="eyebrow">ACESSO</div>
-        <h2>Entrar</h2>
-        <p class="muted">Seja bem-vindo(a) de volta.</p>
-        <form onsubmit="return handleLoginSubmit(event)">
-          <label class="auth-field">
-            <span>E-mail</span>
-            <input id="auth-email" type="email" value="${esc(ownerEmail)}" autocomplete="email" required>
-          </label>
-          <label class="auth-field">
-            <span>Senha</span>
-            <input id="auth-password" type="password" placeholder="Opcional para a conta principal" autocomplete="current-password">
-          </label>
-          <button class="primary full" type="submit">Entrar</button>
-        </form>
+        <h2>${isLogin ? "Entrar" : "Criar conta"}</h2>
+        <p class="muted">${isLogin ? "Seja bem-vindo(a) de volta." : "Cadastre um novo usuário para continuar."}</p>
+
+        <div class="auth-toggle">
+          <button type="button" class="auth-tab ${isLogin ? "active" : ""}" onclick="toggleAuthMode('login')">Entrar</button>
+          <button type="button" class="auth-tab ${!isLogin ? "active" : ""}" onclick="toggleAuthMode('register')">Criar conta</button>
+        </div>
+
+        ${isLogin ? `
+          <form onsubmit="return handleLoginSubmit(event)">
+            <label class="auth-field">
+              <span>E-mail</span>
+              <input id="auth-email" type="email" value="${esc(ownerEmail)}" autocomplete="email" required>
+            </label>
+            <label class="auth-field">
+              <span>Senha</span>
+              <input id="auth-password" type="password" placeholder="Opcional para a conta principal" autocomplete="current-password">
+            </label>
+            <button class="primary full" type="submit">Entrar</button>
+          </form>
+        ` : `
+          <form onsubmit="return handleRegisterSubmit(event)">
+            <label class="auth-field">
+              <span>Nome</span>
+              <input id="register-name" type="text" placeholder="Seu nome" autocomplete="name" required>
+            </label>
+            <label class="auth-field">
+              <span>E-mail</span>
+              <input id="register-email" type="email" placeholder="seu@email.com" autocomplete="email" required>
+            </label>
+            <label class="auth-field">
+              <span>Senha</span>
+              <input id="register-password" type="password" placeholder="Opcional" autocomplete="new-password">
+            </label>
+            <button class="primary full" type="submit">Criar usuário</button>
+          </form>
+        `}
+
         <div class="auth-note">Conta principal: <b>${esc(ownerEmail)}</b></div>
       </div>
     </div>
@@ -472,20 +528,96 @@ function go(page){
   if(page==="history")renderHistory();
 }
 function renderHome(){
+  const user = getCurrentUser();
   const recent=db.workouts[db.workouts.length-1];
   const month=todayISO().slice(0,7);
   const count=db.workouts.filter(w=>w.date.startsWith(month)).length;
   const total=db.workouts.reduce((a,w)=>a+(w.totalTime||0),0);
+  const weeklyTarget = 4;
+  const weeklyProgress = Math.min(100, Math.round((count / weeklyTarget) * 100));
+  const workoutsByType = ["A","B","C"].map(code => ({
+    code,
+    name: trainingName(code),
+    total: db.workouts.filter(w => w.type === code).length,
+    minutes: Math.round(db.workouts.filter(w => w.type === code).reduce((sum, w) => sum + (w.totalTime || 0), 0) / 60)
+  }));
+  const nextSession = workoutsByType.sort((a,b)=>b.total-a.total)[0];
+
   layout(`
-    <section class="hero"><div><span class="pill">4–5x por semana</span><h2>Pronto para treinar?</h2><p>Escolha a divisão e acompanhe cada exercício, série e tempo.</p></div><div class="hero-icon">⚡</div></section>
-    <div class="stats"><div><b>${count}</b><span>treinos no mês</span></div><div><b>${fmtShort(total)}</b><span>tempo total</span></div><div><b>${recent?recent.type:"—"}</b><span>último treino</span></div></div>
-    <h3>Divisão</h3>
-    <div class="training-grid">${["A","B","C"].map(code=>{
-      const t=TRAININGS[code];
-      return `<article class="training-card ${code.toLowerCase()}"><div class="card-top"><span class="badge">${code}</span><span class="exercise-count">${totalExercises(code)} exercícios</span></div><h3>${esc(trainingName(code))}</h3><p>${t.muscles.join(" • ")}</p><button class="primary" onclick="startWorkout('${code}')">▶ Iniciar treino</button></article>`
-    }).join("")}</div>
-    ${recent?`<section class="recent"><div><span class="eyebrow">ÚLTIMO TREINO</span><h3>${recent.type} • ${dateBR(recent.date)}</h3><p>${fmt(recent.totalTime||0)} • ${recent.completedExercises||0} exercícios</p></div><button class="secondary" onclick="showWorkoutDetails('${recent.id}')">Detalhes</button></section>`:""}
-  `,"home");
+    <div class="dashboard-header">
+      <div>
+        <div class="eyebrow">PAINEL</div>
+        <h2>Olá, ${esc(user?.name || "Rafael")}</h2>
+      </div>
+    </div>
+
+    <div class="dashboard-card dashboard-main">
+      <div class="dashboard-main-top">
+        <div>
+          <span class="eyebrow">RESUMO</span>
+          <h3>${count} treinos este mês</h3>
+        </div>
+        <span class="dashboard-chip">${weeklyProgress}%</span>
+      </div>
+      <p>Você está ${weeklyProgress}% do objetivo semanal.</p>
+      <div class="progress-bar"><span style="width:${weeklyProgress}%"></span></div>
+    </div>
+
+    <div class="dashboard-grid">
+      <article class="dashboard-card">
+        <span class="eyebrow">TEMPO TOTAL</span>
+        <b>${fmtShort(total)}</b>
+        <small>tempo registrado</small>
+      </article>
+
+      <article class="dashboard-card">
+        <span class="eyebrow">ÚLTIMO TREINO</span>
+        <b>${recent ? recent.type : "—"}</b>
+        <small>${recent ? dateBR(recent.date) : "Nenhum treino"}</small>
+      </article>
+
+      <article class="dashboard-card">
+        <span class="eyebrow">META</span>
+        <b>${weeklyTarget}/semana</b>
+        <small>objetivo atual</small>
+      </article>
+
+      <article class="dashboard-card">
+        <span class="eyebrow">FAVORITO</span>
+        <b>${nextSession ? nextSession.code : "—"}</b>
+        <small>${nextSession ? nextSession.name : "Sem registro"}</small>
+      </article>
+    </div>
+
+    <section class="dashboard-section">
+      <div class="section-title-row">
+        <h3>Meus treinos</h3>
+      </div>
+      <div class="division-grid">
+        ${workoutsByType.map(item => `
+          <article class="division-card">
+            <div class="division-head">
+              <span class="badge">${item.code}</span>
+              <span>${item.total}x</span>
+            </div>
+            <h4>${esc(item.name)}</h4>
+            <p>${item.minutes} min</p>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+
+    ${recent ? `
+      <section class="recent dashboard-recent">
+        <div>
+          <span class="eyebrow">ÚLTIMO REGISTRO</span>
+          <h3>${recent.type} • ${dateBR(recent.date)}</h3>
+          <p>${fmt(recent.totalTime || 0)} • ${recent.completedExercises || 0} exercícios</p>
+        </div>
+        <button class="secondary" onclick="showWorkoutDetails('${recent.id}')">Detalhes</button>
+      </section>
+    ` : ""}
+  `, "home");
 }
 
 /* =========================================================
@@ -532,7 +664,7 @@ function normalizeAiPlan(raw){
       const count=Math.min(12,Math.max(1,Number.isFinite(requestedCount)?requestedCount:3));
       const sourceSets=Array.isArray(exercise?.sets)?exercise.sets:[];
       if(!exerciseName) return null;
-      return {id:uid("ex-"),name:exerciseName,equipment:String(exercise?.equipment||"").slice(0,120),order:ei,seriesCount:count,sets:Array.from({length:count},(_,si)=>({number:si+1,reps:String(sourceSets[si]?.reps??sourceSets[0]?.reps??"").slice(0,30),weight:"",done:false,completedAt:null}))};
+      return {id:uid("ex-"),name:exerciseName,equipment:String(exercise?.equipment||"").slice(0,120),order:ei,seriesCount:count,sets:Array.from({length:count},(_,si)=>({number:si+1,reps:String(sourceSets[si]?.reps??sourceSets[0]?.reps??"").slice(0,30),weight:"",done:false,completedAt:sourcesets[si]?.completedAt||null}))};
     }).filter(Boolean):[];
     return name&&exercises.length?{id:uid("grupo-"),name,order:gi,exercises}:null;
   }).filter(Boolean):[];
@@ -678,349 +810,219 @@ function viewTraining(code){
   `,"trainings");
 }
 
+function startWorkoutById(id){
+  const w=getMyWorkout(id);if(!w)return;const ex=flattenMyWorkout(w);if(!ex.length)return alert("Adicione pelo menos um exercício ao treino.");
+  stopIntervals();state.training=id;state.workoutDefinitionId=id;state.exerciseIndex=0;state.exerciseTimer=0;state.exerciseRunning=false;state.exerciseStartedAt=null;state.currentSetIndex=0;state.restTimer=0;state.restRunning=false;state.workout={id:uid('exec-'),workoutId:id,type:w.name,date:todayISO(),startedAt:new Date().toISOString(),totalTime:0,exercises:ex.map(e=>({...e,duration:0,sets:e.sets.length?e.sets.map(s=>({...s,done:false,completedAt:null})):[]}))};state.workoutTimerStart=Date.now();renderWorkout();
+}
 function startWorkout(code){
-  stopIntervals();
-  const ex=flatTraining(code);
-  state.training=code; state.exerciseIndex=0; state.exerciseTimer=0; state.exerciseRunning=false; state.exerciseStartedAt=null; state.currentSetIndex=0; state.restTimer=0; state.restRunning=false;
-  state.workout={id:Date.now().toString(), type:code, date:todayISO(), startedAt:new Date().toISOString(), totalTime:0, exercises:ex.map(e=>({id:e.id,name:e.name,section:e.section,prescribedSets:e.sets,prescribedReps:e.reps,duration:0,sets:[]}))};
-  state.workoutTimerStart=Date.now();
-  renderWorkout();
+  const migrated=db.myWorkouts?.find(w=>w.id===`legacy-${code}`);if(migrated)return startWorkoutById(migrated.id);
+  const w=db.myWorkouts?.find(w=>w.name===trainingName(code));if(w)return startWorkoutById(w.id);
+  return startWorkoutById(db.myWorkouts?.[0]?.id);
 }
-
-function currentExercise(){ return state.workout.exercises[state.exerciseIndex]; }
-function exerciseSetCount(e){
-  const n=parseInt(e.prescribedSets);
-  return Number.isFinite(n) && n>0 ? n : 0;
-}
-function nextPendingSetIndex(e){
-  const ex=state.workout.exercises[state.exerciseIndex];
-  const count=exerciseSetCount(e);
-  if(!count) return -1;
-  while(ex.sets.length<count) ex.sets.push({reps:"",weight:"",done:false});
-  for(let i=Math.max(0,state.currentSetIndex);i<count;i++) if(!ex.sets[i].done) return i;
-  for(let i=0;i<count;i++) if(!ex.sets[i].done) return i;
-  return -1;
-}
-function allSetsDone(e){
-  const count=exerciseSetCount(e);
-  if(!count) return false;
-  const ex=state.workout.exercises[state.exerciseIndex];
-  while(ex.sets.length<count) ex.sets.push({reps:"",weight:"",done:false});
-  return ex.sets.slice(0,count).every(s=>s.done);
-}
-function startExerciseTimer(){
-  if(state.restRunning || state.exerciseRunning) return;
-  const e=currentExercise();
-  if(allSetsDone(e)) return;
-  const ready=exerciseReadyForStart(e);
-  if(!ready.ok){
-    alert(ready.message);
-    return;
-  }
-
-  const idx=nextPendingSetIndex(e);
-  if(idx>=0) state.currentSetIndex=idx;
-
-  state.exerciseTimer=0;
-  state.exerciseOneMinuteAlerted=false;
-  state.exerciseRunning=true;
-  state.exerciseStartedAt=Date.now();
-  startMainTick();
-  renderWorkout();
-}
-
-function pauseExerciseTimer(){
-  // Série fixa de 60 segundos: não há pausa.
-  return;
-}
-
-function startMainTick(){
-  if(state.timerInterval) clearInterval(state.timerInterval);
-  state.timerInterval=setInterval(()=>{
-    if(state.exerciseRunning && state.exerciseStartedAt){
-      state.exerciseTimer=(Date.now()-state.exerciseStartedAt)/1000;
-
-      if(state.exerciseTimer>=60){
-        state.exerciseTimer=60;
-        state.exerciseRunning=false;
-        state.exerciseStartedAt=null;
-        if(state.timerInterval){
-          clearInterval(state.timerInterval);
-          state.timerInterval=null;
-        }
-
-        // 1 minuto de exercício terminou: alerta e inicia descanso de 30s.
-        if(navigator.vibrate && db.settings.vibration) navigator.vibrate([250,120,250]);
-        beep();
-        startRest();
-        return;
-      }
-    }
-    updateTimers();
-  },100);
-}
-
-function startRest(){
-  if(state.restRunning) return;
-
-  const e=currentExercise();
-  const count=exerciseSetCount(e);
-  if(!count) return;
-
-  const ex=state.workout.exercises[state.exerciseIndex];
-  while(ex.sets.length<count) ex.sets.push({reps:"",weight:"",done:false});
-
-  state.restRunning=true;
-  state.restTimer=30;
-
-  if(state.restInterval) clearInterval(state.restInterval);
-  state.restInterval=setInterval(()=>{
-    state.restTimer-=1;
-    updateTimers();
-
-    if(state.restTimer<=0){
-      finishRestAndEnableNextSeries();
-    }
-  },1000);
-
-  renderWorkout();
-}
-
-function finishRestAndEnableNextSeries(){
-  if(!state.restRunning) return;
-
-  if(state.restInterval){
-    clearInterval(state.restInterval);
-    state.restInterval=null;
-  }
-
-  state.restRunning=false;
-  state.restTimer=0;
-
-  const e=currentExercise();
-  const count=exerciseSetCount(e);
-  const ex=state.workout.exercises[state.exerciseIndex];
-
-  // A série somente é concluída depois dos 30 segundos de descanso.
-  const idx=Math.min(state.currentSetIndex,count-1);
-  if(ex.sets[idx]) ex.sets[idx].done=true;
-  state.currentSetIndex=idx+1;
-
-  // Fim do descanso: alerta e libera a próxima série.
-  if(navigator.vibrate && db.settings.vibration) navigator.vibrate([250,120,250]);
-  beep();
-
-  state.exerciseTimer=0;
-  state.exerciseStartedAt=null;
-  state.exerciseOneMinuteAlerted=false;
-  e.completed=allSetsDone(e);
-  renderWorkout();
-}
-
-function stopRest(){
-  // O descanso não pode ser pulado/interrompido.
-  return;
-}
-
-function stopIntervals(){if(state.timerInterval)clearInterval(state.timerInterval);if(state.restInterval)clearInterval(state.restInterval);state.timerInterval=null;state.restInterval=null;state.exerciseRunning=false;state.restRunning=false;}
-function beep(){if(!db.settings.sound)return;try{const c=new(window.AudioContext||window.webkitAudioContext)();const o=c.createOscillator();const g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=.05;o.start();o.stop(c.currentTime+.18);}catch(e){}}
-function updateTimers(){
-  const a=document.getElementById('exerciseTimer'); if(a)a.textContent=fmt(state.exerciseTimer);
-  const b=document.getElementById('restTimer'); if(b)b.textContent=fmtShort(state.restRunning?state.restTimer:30);
-  const c=document.getElementById('workoutTimer'); if(c&&state.workoutTimerStart)c.textContent=fmt((Date.now()-state.workoutTimerStart)/1000);
-}
-
-function renderWorkout(){
-  const e=currentExercise(), all=state.workout.exercises, progress=Math.round(((state.exerciseIndex+1)/all.length)*100);
-  const last=db.workouts.flatMap(w=>w.exercises||[]).slice().reverse().find(x=>x.name===e.name) || null;
-  const count=exerciseSetCount(e);
-  const doneSets=count ? e.sets.slice(0,count).filter(s=>s.done).length : 0;
-  const complete=allSetsDone(e);
-  const canNext=complete && !state.restRunning;
-  const setLabel=count ? `Série ${Math.min(state.currentSetIndex+1,count)} de ${count}` : 'Série livre';
-  layout(`
-    <div class="workout-header"><button class="back" onclick="confirmExitWorkout()">‹ Sair</button><span class="pill">TREINO ${state.training}</span></div>
-    <div class="workout-progress"><div style="width:${progress}%"></div></div>
-    <div class="workout-meta"><span>Exercício ${state.exerciseIndex+1} de ${all.length}</span><b id="workoutTimer">${fmt((Date.now()-state.workoutTimerStart)/1000)}</b></div>
-    <section class="focus-card"><span class="eyebrow">${esc(e.section)}</span><h2>${esc(f2DisplayName(e.name))}</h2><div class="prescription">${e.prescribedSets||"Séries não informadas"} ${e.prescribedSets ? '<span>×</span> ' : ''}${e.prescribedReps||""}</div>
-      <div class="set-status">${setLabel} • ${doneSets}${count?' de '+count:''} concluída(s)</div>
-      <div class="big-timer" id="exerciseTimer">${fmt(state.exerciseTimer)}</div>
-      <div class="timer-actions"><button class="timer-start" onclick="startExerciseTimer()" ${complete||state.restRunning||state.exerciseRunning?'disabled':''}>${state.restRunning?'⏳ Descanso...':state.exerciseRunning?'⏱ Série em Execução':(state.currentSetIndex>0?'▶ Iniciar Próxima Série':'▶ Iniciar Série')}</button></div>
+function f2CurrentSet(){const e=currentExercise(),count=exerciseSetCount(e);if(!count)return null;while(e.sets.length<count)e.sets.push({number:e.sets.length+1,reps:"",weight:"",done:false,completedAt:null});return e.sets[Math.min(state.currentSetIndex,count-1)];}
+function exerciseReadyForStart(exercise){const count=exerciseSetCount(exercise);if(!count)return {ok:false,message:"Configure a quantidade de séries para este exercício."};const ex=state.workout?.exercises?.[state.exerciseIndex];if(!ex)return {ok:false,message:"Exercício inválido."};const idx=Math.min(Math.max(state.currentSetIndex,0),count-1),set=ex.sets?.[idx]||{reps:"",weight:""};if(!String(set.weight??"").trim())return {ok:false,message:`Informe a carga da série ${idx+1} antes de iniciar.`};if(!String(set.reps??"").trim())return {ok:false,message:`Informe as repetições da série ${idx+1} antes de iniciar.`};return {ok:true,index:idx};}
+function startExerciseTimer(){if(state.restRunning||state.exerciseRunning)return;const e=currentExercise();if(allSetsDone(e))return;const ready=exerciseReadyForStart(e);if(!ready.ok){alert(ready.message);return;}state.currentSetIndex=ready.index;state.exerciseTimer=0;state.exerciseRunning=true;state.exerciseStartedAt=Date.now();startMainTick();renderWorkout();}
+function startMainTick(){if(state.timerInterval)clearInterval(state.timerInterval);state.timerInterval=setInterval(()=>{if(state.exerciseRunning&&state.exerciseStartedAt){state.exerciseTimer=(Date.now()-state.exerciseStartedAt)/1000;if(state.exerciseTimer>=60){state.exerciseTimer=60;state.exerciseRunning=false;state.exerciseStartedAt=null;clearInterval(state.timerInterval);state.timerInterval=null;if(navigator.vibrate&&db.settings.vibration)navigator.vibrate([250,120,250]);beep();startRest();return;}}updateTimers();},100);}
+function startRest(){if(state.restRunning)return;const e=currentExercise(),count=exerciseSetCount(e);if(!count)return;const ex=state.workout.exercises[state.exerciseIndex];while(ex.sets.length<count)ex.sets.push({number:ex.sets.length+1,reps:"",weight:"",done:false,completedAt:null});state.restRunning=true;state.restTimer=30;if(state.restInterval)clearInterval(state.restInterval);state.restInterval=setInterval(()=>{state.restTimer-=1;updateTimers();if(state.restTimer<=0)finishRestAndEnableNextSeries();},1000);renderWorkout();}
+function stopRest(){return;}
+function finishRestAndEnableNextSeries(){if(!state.restRunning)return;if(state.restInterval)clearInterval(state.restInterval);state.restInterval=null;state.restRunning=false;state.restTimer=0;const e=currentExercise(),count=exerciseSetCount(e),ex=state.workout.exercises[state.exerciseIndex],idx=Math.min(state.currentSetIndex,count-1);if(ex.sets[idx]){ex.sets[idx].done=true;ex.sets[idx].completedAt=new Date().toISOString();}if(navigator.vibrate&&db.settings.vibration)navigator.vibrate([250,120,250]);beep();state.exerciseTimer=0;state.exerciseStartedAt=null;state.exerciseOneMinuteAlerted=false;e.completed=allSetsDone(e);if(e.completed){e.duration=(e.duration||0);if(state.exerciseIndex<state.workout.exercises.length-1){state.exerciseIndex++;state.currentSetIndex=0;state.exerciseTimer=0;state.exerciseRunning=false;renderWorkout();}else{finishWorkout();}}else{state.currentSetIndex=idx+1;renderWorkout();}}
+function finishExercise(){return;}
+function pauseExerciseTimer(){return;}
+function resetExerciseTimer(){return;}
+function prevExercise(){return;}
+function renderSets(e){const count=exerciseSetCount(e);if(!count)return `<div class="empty">Configure a quantidade de séries antes de iniciar este exercício.</div>`;while(e.sets.length<count)e.sets.push({number:e.sets.length+1,reps:"",weight:"",done:false,completedAt:null});return e.sets.slice(0,count).map((s,i)=>`<div class="set-row"><span class="setnum">${i+1}</span><input value="${esc(s.reps)}" placeholder="reps" onchange="setValue(${i},'reps',this.value)"><input value="${esc(s.weight)}" placeholder="kg" inputmode="decimal" onchange="setValue(${i},'weight',this.value)"><span class="check ${s.done?'done':''}">${s.done?'✓':'○'}</span></div>`).join("");}
+function renderWorkout(){const e=currentExercise(),all=state.workout.exercises,progress=Math.round(((state.exerciseIndex+1)/all.length)*100),count=exerciseSetCount(e),doneSets=count?e.sets.slice(0,count).filter(s=>s.done).length:0,complete=allSetsDone(e),canNext=complete && !state.restRunning,setLabel=count?`Série ${Math.min(state.currentSetIndex+1,count)} de ${count}`:"Série não configurada";layout(`<div class="workout-header"><button class="back" onclick="confirmExitWorkout()">‹ Sair</button><span class="pill">TREINO ${state.training}</span></div><div class="workout-progress"><div style="width:${progress}%"></div></div><div class="workout-meta"><span>Exercício ${state.exerciseIndex+1} de ${all.length}</span><b id="workoutTimer">${fmt((Date.now()-state.workoutTimerStart)/1000)}</b></div><section class="focus-card"><span class="eyebrow">${esc(e.section)}</span><h2>${esc(f2DisplayName(e.name))}</h2><div class="prescription">${e.prescribedSets||"Configure as séries"}${e.prescribedReps?` <span>×</span> ${esc(e.prescribedReps)}`:""}</div><div class="set-status">${setLabel} • ${doneSets}${count?' de '+count:''} concluída(s)</div><div class="big-timer" id="exerciseTimer">${fmt(state.exerciseTimer)}</div>
+      <div class="timer-actions"><button class="timer-start" onclick="startExerciseTimer()" ${complete||state.restRunning||state.exerciseRunning?'disabled':''}>${state.restRunning?'⏳ Descanso...':state.exerciseRunning?'⏱ Série em Execução':state.currentSetIndex>0?'▶ Iniciar Próxima Série':'▶ Iniciar Série'}</button></div>
       
-      ${complete?`<div class="exercise-completed">✓ Exercício concluído</div>`:''}
+      ${complete?'<div class="exercise-completed">✓ Exercício concluído</div>':''}
     </section>
-    <section class="rest-card"><div><span class="eyebrow">DESCANSO</span><b id="restTimer">${fmtShort(state.restRunning?state.restTimer:30)}</b></div></section>
+    <section class="rest-card"><div><span class="eyebrow">DESCANSO AUTOMÁTICO</span><b id="restTimer">${fmtShort(state.restRunning?state.restTimer:30)}</b></div></section>
     ${last&&last.sets?.length?`<div class="last-load">Último registro: ${last.sets.map(s=>(s.weight?s.weight+" kg":"sem carga")).join(" • ")}</div>`:""}
-    <section class="sets-card"><div class="section-title">Séries e carga</div>${renderSets(e)}</section>
-    <div class="nav-ex"><button class="secondary" ${state.exerciseIndex===0?"disabled":""} onclick="prevExercise()">← Anterior</button><button class="primary" ${canNext?'':'disabled'} onclick="finishExercise()">${state.exerciseIndex===all.length-1?"Finalizar treino":"Próximo →"}</button></div>
-  `);
-  if(state.exerciseRunning) startMainTick();
-  updateTimers();
-}
-function resetExerciseTimer(){ pauseExerciseTimer(); state.exerciseTimer=0; state.exerciseStartedAt=null; updateTimers(); renderWorkout(); }
-function renderSets(e){
-  const count=parseInt(e.prescribedSets)||0;
-  if(!count)return `<div class="empty">A ficha original não informa a quantidade de séries deste exercício. Registre livremente:</div><div class="manual-set"><input type="number" min="0" placeholder="Reps"><input type="number" min="0" step=".5" placeholder="kg"><button onclick="addSet()">+</button></div>`;
-  const ex=state.workout.exercises[state.exerciseIndex];
-  while(ex.sets.length<count) ex.sets.push({reps:"",weight:"",done:false});
-  return ex.sets.map((s,i)=>`<div class="set-row"><span class="setnum">${i+1}</span><input value="${esc(s.reps)}" placeholder="${e.prescribedReps?.split("/")[i]||"reps"}" onchange="setValue(${i},'reps',this.value)"><input value="${esc(s.weight)}" placeholder="kg" inputmode="decimal" onchange="setValue(${i},'weight',this.value)"><span class="check ${s.done?'done':''}">${s.done?'✓':'○'}</span></div>`).join("");
-}
-function setValue(i,k,v){state.workout.exercises[state.exerciseIndex].sets[i][k]=v;}
-function toggleSet(i){ return; }
-function addSet(){state.workout.exercises[state.exerciseIndex].sets.push({reps:"",weight:"",done:false});renderWorkout();}
-function finishExercise(){
-  const e=currentExercise();
-  if(!allSetsDone(e)) return;
-  pauseExerciseTimer(); stopRest();
-  e.duration=Math.round(state.exerciseTimer); e.completed=true;
-  if(state.exerciseIndex<state.workout.exercises.length-1){state.exerciseIndex++;state.exerciseTimer=0;state.exerciseRunning=false;state.exerciseStartedAt=null;state.currentSetIndex=0;renderWorkout();}
-  else finishWorkout();
-}
-function prevExercise(){pauseExerciseTimer();if(state.restRunning) {if(state.restInterval)clearInterval(state.restInterval);state.restInterval=null;state.restRunning=false;} if(state.exerciseIndex>0)state.exerciseIndex--;state.exerciseTimer=state.workout.exercises[state.exerciseIndex].duration||0;state.exerciseRunning=false;state.exerciseStartedAt=null;state.currentSetIndex=0;renderWorkout();}
-function finishWorkout(){
-  pauseExerciseTimer();stopRest();
-  state.workout.totalTime=Math.round((Date.now()-state.workoutTimerStart)/1000);
-  state.workout.endTime=new Date().toISOString();
-  state.workout.completedExercises=state.workout.exercises.filter(e=>e.duration>0 || e.sets.some(s=>s.done||s.reps||s.weight)).length;
-  db.workouts.push(state.workout); save();
-  const done=state.workout; state.workout=null;
-  layout(`<section class="complete"><div class="complete-icon">✓</div><span class="eyebrow">TREINO FINALIZADO</span><h2>Excelente trabalho!</h2><p>Treino ${done.type} concluído em ${dateBR(done.date)}.</p>
-    <div class="summary-grid"><div><b>${fmt(done.totalTime)}</b><span>tempo total</span></div><div><b>${done.completedExercises}</b><span>exercícios</span></div><div><b>${done.exercises.reduce((a,e)=>a+e.sets.filter(s=>s.done).length,0)}</b><span>séries marcadas</span></div></div>
-    <button class="primary full" onclick="go('home')">Voltar ao início</button><button class="secondary full" onclick="showWorkoutDetails('${done.id}')">Ver detalhes</button></section>`);
-}
-function confirmExitWorkout(){ if(confirm("Sair do treino? O treino em andamento não será salvo.")){stopIntervals();go("home");}}
-function showWorkoutDetails(id){
-  const w=db.workouts.find(x=>x.id===id); if(!w)return;
-  layout(`<button class="back" onclick="go('history')">‹ Histórico</button><span class="pill">TREINO ${w.type}</span><h2>${dateBR(w.date)}</h2><div class="stats"><div><b>${fmt(w.totalTime)}</b><span>tempo</span></div><div><b>${w.completedExercises||0}</b><span>exercícios</span></div></div>
-  <div class="section">${w.exercises.map((e,i)=>`<div class="exercise-row"><div><b>${i+1}. ${esc(f2DisplayName(e.name))}</b><small>${fmt(e.duration||0)} • ${(e.sets||[]).filter(s=>s.done).length} séries concluídas</small></div></div>`).join("")}</div>`,"history");
-}
+    <section class="sets-card"><div class="section-title">Séries e carga</div>${renderSets(e)}</section>`,"home");if(state.exerciseRunning)startMainTick();updateTimers();}
+function setValue(i,k,v){const e=currentExercise();if(e?.sets?.[i]){e.sets[i][k]=v;}}
+function toggleSet(){return;}
+function allSetsDone(e){const count=exerciseSetCount(e);if(!count)return false;while(e.sets.length<count)e.sets.push({number:e.sets.length+1,reps:"",weight:"",done:false,completedAt:null});return e.sets.slice(0,count).every(s=>s.done);}
+function finishWorkout(){if(!state.workout)return;const done=state.workout;stopIntervals();done.totalTime=Math.round((Date.now()-state.workoutTimerStart)/1000);done.endTime=new Date().toISOString();done.completedExercises=done.exercises.filter(e=>e.completed).length;done.totalSets=done.exercises.reduce((n,e)=>n+e.sets.filter(s=>s.done).length,0);const duplicate=db.workoutHistory.some(h=>h.workoutId===done.id&&h.executionDate===done.date&&Math.abs(new Date(h.completedAt)-new Date(done.endTime))<60000);if(!duplicate){db.workoutHistory.push({id:uid('hist-'),workoutId:done.workoutId,name:done.type,date:done.date,executionDate:done.date,startedAt:done.startedAt,completedAt:done.endTime,totalTime:done.totalTime,completedExercises:done.completedExercises,totalSets:done.totalSets,workoutSnapshot:cloneJSON(done)});db.workouts.push(done);save();}state.workout=null;renderCompletion(done);}
+function renderCompletion(done){layout(`<section class="complete"><div class="complete-icon">✓</div><span class="eyebrow">TREINO FINALIZADO</span><h2>Excelente trabalho!</h2><p><b>${esc(done.type)}</b> concluído automaticamente em ${dateBR(done.date)}.</p><div class="summary-grid"><div><b>${fmt(done.totalTime)}</b><span>tempo total</span></div><div><b>${done.completedExercises}</b><span>exercícios</span></div><div><b>${done.totalSets}</b><span>séries</span></div></div><button class="primary full" onclick="go('calendar')">Ver no calendário</button><button class="secondary full" onclick="go('home')">Voltar ao início</button></section>`);}
+function renderCalendar(){const y=calDate.getFullYear(),m=calDate.getMonth(),first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),offset=(first+6)%7,cells=[];for(let i=0;i<offset;i++)cells.push('<div class="cal-day empty"></div>');for(let d=1;d<=days;d++){const iso=`${y}-${pad(m+1)}-${pad(d)}`,ws=(db.workoutHistory||[]).filter(w=>w.date===iso);cells.push(`<button class="cal-day ${ws.length?'has':''}" onclick="calendarDay('${iso}')"><span>${d}</span>${ws.map(w=>`<i>✓ ${esc(f2DisplayName(w.name))}</i><em>${fmtShort(w.totalTime||0)}</em>`).join("")}</button>`);}layout(`<div class="calendar-head"><button class="iconbtn" onclick="changeMonth(-1)">‹</button><h2>${monthLabel(y,m)}</h2><button class="iconbtn" onclick="changeMonth(1)">›</button></div><div class="week"><b>SEG</b><b>TER</b><b>QUA</b><b>QUI</b><b>SEX</b><b>SÁB</b><b>DOM</b></div><div class="calendar">${cells.join("")}</div>`,"calendar");}
+function calendarDay(iso){const ws=(db.workoutHistory||[]).filter(w=>w.date===iso);layout(`<button class="back" onclick="renderCalendar()">‹ Calendário</button><span class="pill">${dateBR(iso)}</span><h2>${ws.length?'Treinos realizados':'Nenhum treino registrado'}</h2>${ws.map(w=>`<button class="list-card" onclick="showWorkoutDetails('${w.id}')"><span class="badge">✓</span><div><b>${esc(f2DisplayName(w.name))}</b><small>${fmt(w.totalTime)} • ${w.completedExercises||0} exercícios • ${w.totalSets||0} séries</small></div><span>›</span></button>`).join("")} ${!ws.length?'<div class="empty big">Este dia ainda não possui treino concluído.</div>':''}`,'calendar');}
+function showWorkoutDetails(id){const h=(db.workoutHistory||[]).find(x=>x.id===id)|| (db.workouts||[]).find(x=>x.id===id);if(!h)return;const w=h.workoutSnapshot||h;layout(`<button class="back" onclick="calendarDay('${h.date}')">‹ Voltar</button><span class="pill">✓ TREINO CONCLUÍDO</span><h2>${esc(f2DisplayName(h.name||w.type))}</h2><div class="stats"><div><b>${dateBR(h.date)}</b><span>data</span></div><div><b>${fmt(h.totalTime||0)}</b><span>tempo</span></div><div><b>${h.totalSets||0}</b><span>séries</span></div></div><div class="section">${(w.exercises||[]).map((e,i)=>`<div class="exercise-row"><div><b>${i+1}. ${esc(f2DisplayName(e.name))}</b><small>${(e.sets||[]).filter(s=>s.done).length} séries concluídas</small></div></div>`).join('')}</div>`,'calendar');}
+function renderHistory(){const list=[...(db.workoutHistory||[])].reverse();layout(`<h2>Histórico</h2><p class="muted">${list.length} treino(s) concluído(s).</p>${list.length?`<div class="list">${list.map(w=>`<button class="list-card" onclick="showWorkoutDetails('${w.id}')"><span class="badge">✓</span><div><b>${esc(f2DisplayName(w.name))}</b><small>${dateBR(w.date)} • ${fmt(w.totalTime)} • ${w.completedExercises||0} exercícios</small></div><span>›</span></button>`).join('')}</div>`:'<div class="empty big">Ainda não há treinos concluídos.</div>'}`,'history');}
+function manualRegister(date,type){const w=db.myWorkouts?.find(x=>x.id===`legacy-${type}`);if(!w)return;const id=uid('hist-');db.workoutHistory.push({id,workoutId:w.id,name:w.name,date,executionDate:done.date,startedAt:null,completedAt:null,totalTime:0,completedExercises:workoutExerciseCount(w),totalSets:workoutSetTotal(w),manual:true,workoutSnapshot:{type:w.name,date,exercicios:flattenMyWorkout(w)}});save();calendarDay(date);}
 
-let calDate=new Date();
-function renderCalendar(){
-  const y=calDate.getFullYear(), m=calDate.getMonth(), first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
-  const offset=(first+6)%7, cells=[];
-  for(let i=0;i<offset;i++)cells.push(`<div class="cal-day empty"></div>`);
-  for(let d=1;d<=days;d++){
-    const iso=`${y}-${pad(m+1)}-${pad(d)}`, ws=db.workouts.filter(w=>w.date===iso);
-    cells.push(`<button class="cal-day ${ws.length?'has':''}" onclick="calendarDay('${iso}')"><span>${d}</span>${ws.map(w=>`<i>${w.type}</i><em>${fmtShort(w.totalTime||0)}</em>`).join("")}</button>`);
-  }
-  layout(`<div class="calendar-head"><button class="iconbtn" onclick="changeMonth(-1)">‹</button><h2>${monthLabel(y,m)}</h2><button class="iconbtn" onclick="changeMonth(1)">›</button></div>
-  <div class="week"><b>SEG</b><b>TER</b><b>QUA</b><b>QUI</b><b>SEX</b><b>SÁB</b><b>DOM</b></div><div class="calendar">${cells.join("")}</div>
-  <button class="primary full" onclick="calendarDay('${todayISO()}')">+ Registrar treino</button>`,"calendar");
-}
-function changeMonth(delta){calDate=new Date(calDate.getFullYear(),calDate.getMonth()+delta,1);renderCalendar();}
-function calendarDay(iso){
-  const ws=db.workouts.filter(w=>w.date===iso);
-  layout(`<button class="back" onclick="renderCalendar()">‹ Calendário</button><span class="pill">${dateBR(iso)}</span><h2>${ws.length?"Treinos realizados":"Nenhum treino registrado"}</h2>
-  ${ws.map(w=>`<button class="list-card" onclick="showWorkoutDetails('${w.id}')"><span class="badge">${w.type}</span><div><b>Treino ${w.type}</b><small>${fmt(w.totalTime)} • ${w.completedExercises||0} exercícios</small></div><span>›</span></button>`).join("")}
-  <div class="register-box"><h3>Registrar manualmente</h3><p>Use esta opção para marcar um treino que você fez fora do aplicativo.</p><div class="seg">${["A","B","C"].map(c=>`<button onclick="manualRegister('${iso}','${c}')">Treino ${c}</button>`).join("")}</div></div>`,"calendar");
-}
-function manualRegister(date,type){db.workouts.push({id:Date.now().toString(),type,date,startedAt:null,endTime:null,totalTime:0,completedExercises:0,exercises:flatTraining(type).map(e=>({id:e.id,name:e.name,section:e.section,duration:0,sets:[]})),manual:true});save();calendarDay(date);}
+function renderDashboard(){
+  const recent=db.workouts[db.workouts.length-1];
+  const month=todayISO().slice(0,7);
+  const monthWorkouts = db.workouts.filter(w => w.date.startsWith(month));
+  const count = monthWorkouts.length;
+  const total = monthWorkouts.reduce((sum, w) => sum + (w.totalTime || 0), 0);
+  const exercisesDone = monthWorkouts.reduce((sum, w) => sum + (w.completedExercises || 0), 0);
+  const avgDuration = count ? Math.round(total / count) : 0;
+  const lastWorkout = monthWorkouts[monthWorkouts.length - 1];
 
-function renderHistory(){
-  const list=[...db.workouts].reverse();
-  layout(`<h2>Histórico</h2><p class="muted">${list.length} treino(s) registrado(s).</p>${list.length?`<div class="list">${list.map(w=>`<button class="list-card" onclick="showWorkoutDetails('${w.id}')"><span class="badge">${w.type}</span><div><b>${dateBR(w.date)}</b><small>${fmt(w.totalTime)} • ${w.completedExercises||0} exercícios</small></div><span>›</span></button>`).join("")}</div>`:`<div class="empty big">Ainda não há treinos salvos.</div>`}`,"history");
-}
+  layout(`
+    <div class="dashboard-header">
+      <h2>Resumo do Treino</h2>
+      <p class="muted">Acompanhe seu progresso e estatísticas.</p>
+    </div>
+    <div class="dashboard-stats">
+      <div class="stat-item">
+        <b>${count}</b>
+        <span>Treinos este mês</span>
+      </div>
+      <div class="stat-item">
+        <b>${fmtShort(total)}</b>
+        <span>Tempo total (hh:mm)</span>
+      </div>
+      <div class="stat-item">
+        <b>${exercisesDone}</b>
+        <span>Exercícios concluídos</span>
+      </div>
+      <div class="stat-item">
+        <b>${fmt(avgDuration * 60)}</b>
+        <span>Duração média por treino</span>
+      </div>
+    </div>
+    ${lastWorkout ? `
+    <div class="recent-workout">
+      <h3>Último Treino: ${lastWorkout.type}</h3>
+      <p><strong>${fmt(lastWorkout.totalTime || 0)}</strong> • ${lastWorkout.completedExercises || 0} exercícios</p>
+      <button class="secondary" onclick="showWorkoutDetails('${lastWorkout.id}')">Ver detalhes</button>
+    </div>` : `
+    <div class="empty-state">
+      <p>Ainda não há treinos registrados este mês.</p>
+      <button class="primary" onclick="go('trainings')">Começar um treino</button>
+    </div>`}
+    <div class="monthly-summary">
+      <h3>Histórico Mensal</h3>
+      <div class="summary-chart" id="monthlyChart"></div>
+    </div>
+  `, "home");
 
-function openSettings(){
-  layout(`<button class="back" onclick="go('home')">‹ Voltar</button><h2>Configurações</h2>
-    <section class="settings-card"><label>Descanso padrão <select onchange="db.settings.rest=+this.value;save()">${[30,45,60,90,120].map(x=>`<option value="${x}" ${db.settings.rest===x?'selected':''}>${x} segundos</option>`).join("")}</select></label>
-    <label class="switch">Vibração <input type="checkbox" ${db.settings.vibration?'checked':''} onchange="db.settings.vibration=this.checked;save()"></label>
-    <label class="switch">Som <input type="checkbox" ${db.settings.sound?'checked':''} onchange="db.settings.sound=this.checked;save()"></label>
-    <label class="switch">Conta: ${esc(getCurrentUser()?.name || "Convidado")} <button class="secondary compact" type="button" onclick="logoutUser()">Sair</button></label>
-    </section>
-    <section class="settings-card"><h3>Treinos</h3>
-    <p class="muted">Personalize os treinos, altere o nome e monte sua própria sequência de exercícios.</p>
-    <div class="seg">${['A','B','C'].map(c=>`<button onclick="editTraining('${c}')">Editar ${c}</button>`).join('')}</div>
-    </section>
-    <section class="settings-card"><h3>Dados</h3><button class="secondary full" onclick="exportData()">Exportar dados</button><label class="filebtn">Importar dados<input type="file" accept=".json" onchange="importData(this.files[0])"></label><button class="danger full" onclick="clearData()">Apagar histórico</button></section>`,"home");
-}
-function exportData(){const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="meu-treino-backup.json";a.click();URL.revokeObjectURL(a.href);}
-function importData(file){if(!file)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!x.workouts)throw 0;db=x;save();openSettings();alert("Dados importados com sucesso.");}catch(e){alert("Arquivo inválido.");}};r.readAsText(file);}
-function clearData(){if(confirm("Apagar todo o histórico? Esta ação não pode ser desfeita.")){
-  const auth = { users: db.users || [], currentUserId: db.currentUserId || null, ownerId: db.ownerId || null };
-  db = { ...JSON.parse(JSON.stringify(DEFAULTS)), users: auth.users, currentUserId: auth.currentUserId, ownerId: auth.ownerId };
-  save();
-  openSettings();
-}}
-
-if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js"));
-bootApp();
-
-
-/* =========================================================
-   INTEGRAÇÃO DA BIBLIOTECA COM "ADICIONAR EXERCÍCIO"
-   ========================================================= */
-(function(){
-  function getValue(id){
-    const el=document.getElementById(id);
-    return el ? el.value : "";
-  }
-
-  function findExerciseNameInput(){
-    return document.querySelector(
-      '#exercise-name, #exercicio-nome, [name="exercise-name"], [name="exercicio"], [name="nome-exercicio"]'
-    );
-  }
-
-  async function populateExerciseSuggestions(){
-    const input=findExerciseNameInput();
-    if(!input || !window.ExerciseLibrary) return;
-
-    let dl=document.getElementById("exercise-library-suggestions");
-    if(!dl){
-      dl=document.createElement("datalist");
-      dl.id="exercise-library-suggestions";
-      document.body.appendChild(dl);
-      input.setAttribute("list", dl.id);
-    }
-
-    const items=await ExerciseLibrary.search(input.value || "");
-    dl.innerHTML=items.map(e =>
-      '<option value="'+String(e.nome).replace(/"/g,'&quot;')+'"></option>'
-    ).join("");
-  }
-
-  async function saveExerciseFromForm(){
-    const input=findExerciseNameInput();
-    if(!input) return;
-
-    const nome=input.value.trim();
-    if(!nome) return;
-
-    const seriesEl=document.querySelector('#exercise-series, #exercicio-series, [name="series"], [name="qtd-series"]');
-    const loadEl=document.querySelector('#exercise-load, #exercicio-carga, [name="carga"], [name="load"]');
-    const repsEl=document.querySelector('#exercise-reps, #exercicio-repeticoes, [name="repeticoes"], [name="reps"]');
-
-    await ExerciseLibrary.create(nome, {
-      series: seriesEl ? seriesEl.value : "",
-      carga: loadEl ? loadEl.value : "",
-      repeticoes: repsEl ? repsEl.value : ""
-    });
-  }
-
-  function install(){
-    const input=findExerciseNameInput();
-    if(input){
-      input.addEventListener("input", populateExerciseSuggestions);
-      input.addEventListener("change", populateExerciseSuggestions);
-      populateExerciseSuggestions();
-    }
-
-    // Intercepta formulários que contenham o campo de nome de exercício.
-    document.querySelectorAll("form").forEach(form=>{
-      if(form.dataset.exerciseLibraryBound) return;
-      if(form.querySelector('#exercise-name, #exercicio-nome, [name="exercise-name"], [name="exercicio"], [name="nome-exercicio"]')){
-        form.dataset.exerciseLibraryBound="1";
-        form.addEventListener("submit", ()=>{ saveExerciseFromForm().catch(console.warn); });
+  // Gráfico mensal (exemplo simples com dados fictícios)
+  const ctx = document.getElementById('monthlyChart');
+  if (ctx) {
+    const labels = monthWorkouts.map(w => w.date.slice(8, 10)).filter((v, i, a) => a.indexOf(v) === i);
+    const data = {
+      labels: labels,
+      datasets: [{
+        label: 'Exercícios concluídos',
+        data: labels.map(d => monthWorkouts.filter(w => w.date.slice(8, 10) === d).reduce((sum, w) => sum + (w.completedExercises || 0), 0)),
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1
+      }]
+    };
+    new Chart(ctx, {
+      type: 'line',
+      data: data,
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            beginAtZero: true
+          },
+          y: {
+            beginAtZero: true
+          }
+        }
       }
     });
   }
+}
 
-  document.addEventListener("DOMContentLoaded", install);
-  window.addEventListener("load", install);
-})();
+function renderHome(){
+  const user = getCurrentUser();
+  const recent=db.workouts[db.workouts.length-1];
+  const month=todayISO().slice(0,7);
+  const count=db.workouts.filter(w=>w.date.startsWith(month)).length;
+  const total=db.workouts.reduce((a,w)=>a+(w.totalTime||0),0);
+  const weeklyTarget = 4;
+  const weeklyProgress = Math.min(100, Math.round((count / weeklyTarget) * 100));
+  const workoutsByType = ["A","B","C"].map(code => ({
+    code,
+    name: trainingName(code),
+    total: db.workouts.filter(w => w.type === code).length,
+    minutes: Math.round(db.workouts.filter(w => w.type === code).reduce((sum, w) => sum + (w.totalTime || 0), 0) / 60)
+  }));
+  const nextSession = workoutsByType.sort((a,b)=>b.total-a.total)[0];
 
+  layout(`
+    <div class="dashboard-header">
+      <div>
+        <div class="eyebrow">PAINEL</div>
+        <h2>Olá, ${esc(user?.name || "Rafael")}</h2>
+      </div>
+    </div>
+
+    <div class="dashboard-card dashboard-main">
+      <div class="dashboard-main-top">
+        <div>
+          <span class="eyebrow">RESUMO</span>
+          <h3>${count} treinos este mês</h3>
+        </div>
+        <span class="dashboard-chip">${weeklyProgress}%</span>
+      </div>
+      <p>Você está ${weeklyProgress}% do objetivo semanal.</p>
+      <div class="progress-bar"><span style="width:${weeklyProgress}%"></span></div>
+    </div>
+
+    <div class="dashboard-grid">
+      <article class="dashboard-card">
+        <span class="eyebrow">TEMPO TOTAL</span>
+        <b>${fmtShort(total)}</b>
+        <small>tempo registrado</small>
+      </article>
+
+      <article class="dashboard-card">
+        <span class="eyebrow">ÚLTIMO TREINO</span>
+        <b>${recent ? recent.type : "—"}</b>
+        <small>${recent ? dateBR(recent.date) : "Nenhum treino"}</small>
+      </article>
+
+      <article class="dashboard-card">
+        <span class="eyebrow">META</span>
+        <b>${weeklyTarget}/semana</b>
+        <small>objetivo atual</small>
+      </article>
+
+      <article class="dashboard-card">
+        <span class="eyebrow">FAVORITO</span>
+        <b>${nextSession ? nextSession.code : "—"}</b>
+        <small>${nextSession ? nextSession.name : "Sem registro"}</small>
+      </article>
+    </div>
+
+    <section class="dashboard-section">
+      <div class="section-title-row">
+        <h3>Meus treinos</h3>
+      </div>
+      <div class="division-grid">
+        ${workoutsByType.map(item => `
+          <article class="division-card">
+            <div class="division-head">
+              <span class="badge">${item.code}</span>
+              <span>${item.total}x</span>
+            </div>
+            <h4>${esc(item.name)}</h4>
+            <p>${item.minutes} min</p>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+
+    ${recent ? `
+      <section class="recent dashboard-recent">
+        <div>
+          <span class="eyebrow">ÚLTIMO REGISTRO</span>
+          <h3>${recent.type} • ${dateBR(recent.date)}</h3>
+          <p>${fmt(recent.totalTime || 0)} • ${recent.completedExercises || 0} exercícios</p>
+        </div>
+        <button class="secondary" onclick="showWorkoutDetails('${recent.id}')">Detalhes</button>
+      </section>
+    ` : ""}
+  `, "home");
+}
 
 /* =========================================================
    CONFIGURAÇÃO DO EXERCÍCIO NO TREINO
@@ -1124,7 +1126,7 @@ function f2EscapeAttr(s){ return esc(String(s)).replace(/`/g,"&#96;"); }
 function f2DisplayName(value){
   const text=String(value??"").trim();
   if(!text)return "";
-  return text.toLocaleLowerCase("pt-BR").replace(/(^|[\s\-/])([a-záàâãéêíóôõúç])/giu,(_,sep,ch)=>sep+ch.toLocaleUpperCase("pt-BR"));
+  return text.toLocaleLowerCase("pt-BR").replace(/(^|[\s\-/])([a-záàâãéêíóôõúç])/giu,(_,sep,ch)=>sep+ch.toLocaleUpperase("pt-BR"));
 }
 function f2WorkoutCard(w){
   const name=f2DisplayName(w.name);
@@ -1213,6 +1215,7 @@ function renderTrainings(){
 function renderNewWorkout(){
   layout(`
     <button class="back edit-back" onclick="go('home')" aria-label="Voltar" title="Voltar">
+
       <span aria-hidden="true">←</span><span>Início</span>
     </button>
 
@@ -1318,7 +1321,8 @@ function flattenMyWorkout(w){
 }
 function startWorkoutById(id){
   const w=getMyWorkout(id);if(!w)return;const ex=flattenMyWorkout(w);if(!ex.length)return alert("Adicione pelo menos um exercício ao treino.");
-  stopIntervals();state.training=id;state.workoutDefinitionId=id;state.exerciseIndex=0;state.exerciseTimer=0;state.exerciseRunning=false;state.exerciseStartedAt=null;state.currentSetIndex=0;state.restTimer=0;state.restRunning=false;state.workout={id:uid('exec-'),workoutId:id,type:w.name,date:todayISO(),startedAt:new Date().toISOString(),totalTime:0,exercises:ex.map(e=>({...e,duration:0,sets:e.sets.length?e.sets.map(s=>({...s,done:false,completedAt:null})):[]}))};state.workoutTimerStart=Date.now();renderWorkout();}
+  stopIntervals();state.training=id;state.workoutDefinitionId=id;state.exerciseIndex=0;state.exerciseTimer=0;state.exerciseRunning=false;state.exerciseStartedAt=null;state.currentSetIndex=0;state.restTimer=0;state.restRunning=false;state.workout={id:uid('exec-'),workoutId:id,type:w.name,date:todayISO(),startedAt:new Date().toISOString(),totalTime:0,exercises:ex.map(e=>({...e,duration:0,sets:e.sets.length?e.sets.map(s=>({...s,done:false,completedAt:null})):[]}))};state.workoutTimerStart=Date.now();renderWorkout();
+}
 function startWorkout(code){
   const migrated=db.myWorkouts?.find(w=>w.id===`legacy-${code}`);if(migrated)return startWorkoutById(migrated.id);
   const w=db.myWorkouts?.find(w=>w.name===trainingName(code));if(w)return startWorkoutById(w.id);
@@ -1353,5 +1357,5 @@ function renderCalendar(){const y=calDate.getFullYear(),m=calDate.getMonth(),fir
 function calendarDay(iso){const ws=(db.workoutHistory||[]).filter(w=>w.date===iso);layout(`<button class="back" onclick="renderCalendar()">‹ Calendário</button><span class="pill">${dateBR(iso)}</span><h2>${ws.length?'Treinos realizados':'Nenhum treino registrado'}</h2>${ws.map(w=>`<button class="list-card" onclick="showWorkoutDetails('${w.id}')"><span class="badge">✓</span><div><b>${esc(f2DisplayName(w.name))}</b><small>${fmt(w.totalTime)} • ${w.completedExercises||0} exercícios • ${w.totalSets||0} séries</small></div><span>›</span></button>`).join("")} ${!ws.length?'<div class="empty big">Este dia ainda não possui treino concluído.</div>':''}`,'calendar');}
 function showWorkoutDetails(id){const h=(db.workoutHistory||[]).find(x=>x.id===id)|| (db.workouts||[]).find(x=>x.id===id);if(!h)return;const w=h.workoutSnapshot||h;layout(`<button class="back" onclick="calendarDay('${h.date}')">‹ Voltar</button><span class="pill">✓ TREINO CONCLUÍDO</span><h2>${esc(f2DisplayName(h.name||w.type))}</h2><div class="stats"><div><b>${dateBR(h.date)}</b><span>data</span></div><div><b>${fmt(h.totalTime||0)}</b><span>tempo</span></div><div><b>${h.totalSets||0}</b><span>séries</span></div></div><div class="section">${(w.exercises||[]).map((e,i)=>`<div class="exercise-row"><div><b>${i+1}. ${esc(f2DisplayName(e.name))}</b><small>${(e.sets||[]).filter(s=>s.done).length} séries concluídas</small></div></div>`).join('')}</div>`,'calendar');}
 function renderHistory(){const list=[...(db.workoutHistory||[])].reverse();layout(`<h2>Histórico</h2><p class="muted">${list.length} treino(s) concluído(s).</p>${list.length?`<div class="list">${list.map(w=>`<button class="list-card" onclick="showWorkoutDetails('${w.id}')"><span class="badge">✓</span><div><b>${esc(f2DisplayName(w.name))}</b><small>${dateBR(w.date)} • ${fmt(w.totalTime)} • ${w.completedExercises||0} exercícios</small></div><span>›</span></button>`).join('')}</div>`:'<div class="empty big">Ainda não há treinos concluídos.</div>'}`,'history');}
-function manualRegister(date,type){const w=db.myWorkouts?.find(x=>x.id===`legacy-${type}`);if(!w)return;const id=uid('hist-');db.workoutHistory.push({id,workoutId:w.id,name:w.name,date,executionDate:date,startedAt:null,completedAt:null,totalTime:0,completedExercises:workoutExerciseCount(w),totalSets:workoutSetTotal(w),manual:true,workoutSnapshot:{type:w.name,date,exercises:flattenMyWorkout(w)}});save();calendarDay(date);}
+function manualRegister(date,type){const w=db.myWorkouts?.find(x=>x.id===`legacy-${type}`);if(!w)return;const id=uid('hist-');db.workoutHistory.push({id,workoutId:w.id,name:w.name,date,executionDate:done.date,startedAt:null,completedAt:null,totalTime:0,completedExercises:workoutExerciseCount(w),totalSets:workoutSetTotal(w),manual:true,workoutSnapshot:{type:w.name,date,exercicios:flattenMyWorkout(w)}});save();calendarDay(date);}
 
