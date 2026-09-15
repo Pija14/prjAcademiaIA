@@ -598,7 +598,7 @@ h3 {
   padding: 0;
   border: 1px solid var(--danger-line);
   border-radius: var(--r-md);
-  background: var(--surface);
+  background: var(--danger-soft);
   color: var(--danger-strong);
   font-size: var(--text-xl);
   font-weight: var(--weight-semibold);
@@ -607,7 +607,7 @@ h3 {
 }
 
 .card-delete:hover {
-  background: var(--danger-soft);
+  background: var(--danger-line);
 }
 
 /* Compatibilidade de markup existente */
@@ -723,6 +723,24 @@ h3 {
   font-size: var(--text-sm);
 }
 
+.dashboard-goal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--dark-surface);
+  color: var(--ink-on-dark);
+  font-size: var(--text-xs);
+}
+
+.dashboard-goal strong {
+  color: var(--accent-contrast);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
 .dashboard-chip {
   min-width: 62px;
   height: 36px;
@@ -782,18 +800,26 @@ h3 {
   justify-content: space-between;
   gap: var(--space-4);
   margin-top: var(--space-5);
-  padding: var(--space-4);
+  padding: var(--space-5);
   background: var(--accent-soft);
   border-color: var(--accent-soft-strong);
 }
 
+.recent-workout-content {
+  min-width: 0;
+}
+
+.recent-workout .eyebrow {
+  color: var(--accent-deep);
+}
+
 .recent-workout h3 {
-  margin: 0;
-  font-size: var(--text-sm);
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-lg);
 }
 
 .recent-workout p {
-  margin: var(--space-1) 0 0;
+  margin: var(--space-2) 0 0;
   color: var(--muted);
   font-size: var(--text-xs);
 }
@@ -1258,6 +1284,39 @@ h3 {
   gap: var(--space-3);
 }
 
+.settings-card input,
+.settings-card select,
+.settings-card textarea,
+.new-workout-form input,
+.new-workout-form select,
+.new-workout-form textarea {
+  width: 100%;
+  min-height: var(--control-lg);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: var(--lh-body);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.settings-card textarea,
+.new-workout-form textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.settings-card input:hover,
+.settings-card select:hover,
+.settings-card textarea:hover,
+.new-workout-form input:hover,
+.new-workout-form select:hover,
+.new-workout-form textarea:hover {
+  border-color: var(--line-strong);
+}
+
 .form-hint {
   margin: var(--space-3) 0;
   color: var(--muted);
@@ -1556,7 +1615,7 @@ h3 {
 
 .cal-day {
   min-width: 0;
-  min-height: 54px;
+  min-height: 64px;
   padding: var(--space-2) var(--space-1);
   display: flex;
   flex-direction: column;
@@ -1585,14 +1644,18 @@ h3 {
 }
 
 .cal-day i {
+  width: 100%;
   max-width: 100%;
   overflow: hidden;
   color: var(--accent-deep);
   font-size: var(--text-2xs);
   font-style: normal;
   font-weight: var(--weight-bold);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.15;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
 }
 
 .cal-day em {
@@ -1711,6 +1774,16 @@ h3 {
 }
 
 @media (max-width: 360px) {
+  .dashboard-goal {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .recent-workout {
+    padding: var(--space-4);
+  }
+
   main {
     padding-left: var(--space-3);
     padding-right: var(--space-3);

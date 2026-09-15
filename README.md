@@ -1,3 +1,11 @@
+
+## v41 — Refinamento da tela inicial e edição
+
+- Unificação da meta semanal no card de Resumo.
+- Unificação do indicador Último Treino com o card de treino recente.
+- Calendário ajustado para nomes longos sem extrapolar as células.
+- Botão de exclusão dos cards de treino destacado no canto superior direito.
+- Campos Nome, Descrição e Nível da edição de treino com padrão visual arredondado e confortável para toque.
 # Meu Treino — PWA
 
 Versão 2 corrigida do aplicativo pessoal de treinos A/B/C.

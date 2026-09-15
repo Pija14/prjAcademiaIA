@@ -542,6 +542,7 @@ function renderHome(){
         <span class="dashboard-chip">${weeklyProgress}%</span>
       </div>
       <p>Você está ${weeklyProgress}% do objetivo semanal.</p>
+      <div class="dashboard-goal"><span>Meta</span><strong>${weeklyTarget} treinos / semana</strong></div>
       <div class="progress-bar"><span style="width:${weeklyProgress}%"></span></div>
     </div>
 
@@ -553,18 +554,6 @@ function renderHome(){
       </article>
 
       <article class="dashboard-card">
-        <span class="eyebrow">ÚLTIMO TREINO</span>
-        <b>${recent ? esc(f2DisplayName(recent.type)) : "—"}</b>
-        <small>${recent ? dateBR(recent.date) : "Nenhum treino"}</small>
-      </article>
-
-      <article class="dashboard-card">
-        <span class="eyebrow">META</span>
-        <b>${weeklyTarget}/semana</b>
-        <small>objetivo atual</small>
-      </article>
-
-      <article class="dashboard-card">
         <span class="eyebrow">FAVORITO</span>
         <b>${nextSession ? nextSession.code : "—"}</b>
         <small>${nextSession ? nextSession.name : "Sem registro"}</small>
@@ -573,8 +562,11 @@ function renderHome(){
 
     ${recent ? `
       <div class="recent-workout">
-        <h3>Último treino: ${esc(f2DisplayName(recent.type))}</h3>
-        <p><strong>${fmt(recent.totalTime || 0)}</strong> • ${recent.completedExercises || 0} exercícios</p>
+        <div class="recent-workout-content">
+          <span class="eyebrow">ÚLTIMO TREINO</span>
+          <h3>${esc(f2DisplayName(recent.type))}</h3>
+          <p><strong>${fmt(recent.totalTime || 0)}</strong> • ${recent.completedExercises || 0} exercícios • ${dateBR(recent.date)}</p>
+        </div>
         <button class="secondary" onclick="showWorkoutDetails('${recent.id}')">Ver detalhes</button>
       </div>
     ` : `
