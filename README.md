@@ -1,3 +1,11 @@
+
+## v48 — Backend de IA com OpenAI
+
+- Backend configurado para usar OpenAI como provedor padrão.
+- `OPENAI_API_KEY` configurada como variável secreta no deploy.
+- Modelo padrão configurado como `gpt-5.6-luna`.
+- `.env` local não é incluído no pacote; use `.env.example` para configuração.
+
 ## v47 — Botão de exclusão dos treinos
 
 - Botão de exclusão dos cards de treino reduzido visualmente.
@@ -205,7 +213,7 @@ Sem `config.js`, todos os treinos continuam funcionando e apenas a função de I
 
 GitHub Pages não executa Python ou Node. Hospede `ai-backend` separadamente em um provedor compatível com FastAPI (como Render ou Google Cloud Run).
 
-1. Configure as variáveis de `ai-backend/.env.example` no provedor: `AI_PROVIDER=gemini` ou `openai` e somente a chave correspondente.
+1. Para usar OpenAI, configure no provedor: `AI_PROVIDER=openai`, `OPENAI_API_KEY` e, opcionalmente, `OPENAI_MODEL=gpt-5.6-luna`. A chave deve ficar somente no ambiente do backend.
 2. Em `ALLOWED_ORIGINS`, informe a origem real do GitHub Pages, como `https://usuario.github.io`. Não use `*` em produção.
 3. Para executar localmente: em `ai-backend`, crie um ambiente virtual, instale `pip install -r requirements.txt` e execute `uvicorn app.main:app --host 0.0.0.0 --port 8000`.
 
