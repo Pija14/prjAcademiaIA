@@ -1,3 +1,10 @@
+## v44 — Repetições bloqueadas e carga editável
+
+- Campo de repetições/séries bloqueado na execução do exercício.
+- Campo de carga (Kg) permanece editável.
+- Estilo visual diferencia campo bloqueado de campo editável.
+- Cache e query strings atualizados para v44.
+
 ## v43 — Correção da edição de carga (Kg)
 
 - Corrigido o bloqueio de interação dos inputs de séries e carga na tela de execução.
