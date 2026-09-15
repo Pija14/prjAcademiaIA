@@ -1,3 +1,11 @@
+## v47 — Botão de exclusão dos treinos
+
+- Botão de exclusão dos cards de treino reduzido visualmente.
+- Símbolo “×” desenhado diretamente por CSS, sem depender do SVG.
+- Mantida a função de exclusão e o handler existente.
+- Área de toque e foco visível preservados.
+- Cache e query strings atualizados para v47.
+
 ## v45 — Meta semanal e refinamento das configurações
 
 - Removida a região visual de Preferências da tela de Configurações.
