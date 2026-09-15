@@ -237,6 +237,7 @@ const ALL_EXERCISES = Object.fromEntries(
 );
 
 const KEY = "meuTreinoDataV1";
+const AUTH_TOKEN_KEY = "meuTreinoAccessTokenV1";
 const DEFAULTS = {
   workouts: [],
   users: [],
@@ -247,7 +248,7 @@ const DEFAULTS = {
   customExercises: {A:[],B:[],C:[]},
   workoutPlans: {A:null,B:null,C:null},
   workoutNames: {A:"Treino A",B:"Treino B",C:"Treino C"},
-  myWorkouts: null,
+  myWorkouts: [],
   workoutHistory: []
 };
 let db;
@@ -263,6 +264,7 @@ if(!db.workoutPlans) db.workoutPlans = {A:null,B:null,C:null};
 if(!db.workoutNames) db.workoutNames = {A:"Treino A",B:"Treino B",C:"Treino C"};
 if(!Array.isArray(db.workoutHistory)) db.workoutHistory = [];
 if(!Array.isArray(db.workouts)) db.workouts = [];
+if(!Array.isArray(db.myWorkouts)) db.myWorkouts = [];
 if(!db.settings || typeof db.settings!=="object") db.settings=JSON.parse(JSON.stringify(DEFAULTS.settings));
 if(!Number.isFinite(Number(db.settings.exerciseDuration)) || Number(db.settings.exerciseDuration)<=0) db.settings.exerciseDuration=60;
 if(!Number.isFinite(Number(db.settings.restDuration)) || Number(db.settings.restDuration)<=0) db.settings.restDuration=30;
@@ -272,40 +274,26 @@ if(!Number.isInteger(Number(db.settings.weeklyGoal)) || Number(db.settings.weekl
   if(!Array.isArray(db.excludedExercises[k])) db.excludedExercises[k]=[];
   if(!Array.isArray(db.customExercises[k])) db.customExercises[k]=[];
 });
-let state = { page:"home", training:null, exerciseIndex:0, workout:null, exerciseTimer:0, exerciseOneMinuteAlerted:false, exerciseRunning:false, exerciseStartedAt:null, currentSetIndex:0, restTimer:0, restRunning:false, timerInterval:null, restInterval:null };
+let state = { page:"home", training:null, exerciseIndex:0, exerciseTimer:0, exerciseOneMinuteAlerted:false, exerciseRunning:false, exerciseStartedAt:null, currentSetIndex:0, restTimer:0, restRunning:false, timerInterval:null, restInterval:null };
 let authMode = "login";
+let apiSyncTimer = null;
+let apiSyncInFlight = false;
+let apiSyncPending = false;
 
 function uid(prefix="id"){ return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2,8)}`; }
 function normalizeEmail(value){ return String(value || "").trim().toLowerCase(); }
-function seedOwnerUser(){
-  if (db.users.length) return;
-  const owner = {
-    id: uid("user"),
-    name: "Rafael Louzada",
-    email: "rafaellouzadaa@gmail.com",
-    password: "",
-    createdAt: new Date().toISOString()
-  };
-  db.users.push(owner);
-  db.ownerId = owner.id;
-  db.currentUserId = null;
-  save();
+function apiBaseUrl(){
+  const raw=window.MEU_TREINO_CONFIG?.AI_API_URL;
+  return typeof raw==="string" ? raw.trim().replace(/\/$/,"") : "";
 }
+function apiConfigured(){ return /^https:\/\//i.test(apiBaseUrl()) || /^http:\/\/(localhost|127\.0\.0\.1)(?::\d+)?$/i.test(apiBaseUrl()); }
+function getAccessToken(){ return localStorage.getItem(AUTH_TOKEN_KEY) || ""; }
+function setAccessToken(token){ if(token) localStorage.setItem(AUTH_TOKEN_KEY,token); else localStorage.removeItem(AUTH_TOKEN_KEY); }
 function ensureAuthState(){
-  if(!Array.isArray(db.users)) db.users = [];
-  seedOwnerUser();
-  if(!db.ownerId || !db.users.some(u => u.id === db.ownerId)) db.ownerId = db.users[0].id;
-  if(db.currentUserId && !db.users.some(u => u.id === db.currentUserId)) db.currentUserId = null;
-  if(!db.users.some(u => u.email && normalizeEmail(u.email) === "rafaellouzadaa@gmail.com")) {
-    db.users.unshift({
-      id: uid("user"),
-      name: "Rafael Louzada",
-      email: "rafaellouzadaa@gmail.com",
-      password: "",
-      createdAt: new Date().toISOString()
-    });
-    db.ownerId = db.users[0].id;
-  }
+  if(!Array.isArray(db.users)) db.users=[];
+  if(!Array.isArray(db.workoutHistory)) db.workoutHistory=[];
+  if(!Array.isArray(db.workouts)) db.workouts=[];
+  if(!Array.isArray(db.myWorkouts)) db.myWorkouts=[];
 }
 function getCurrentUser(){
   ensureAuthState();
@@ -313,135 +301,237 @@ function getCurrentUser(){
 }
 function getOwnerUser(){
   ensureAuthState();
-  return db.users.find(u => u.id === db.ownerId) || db.users[0] || null;
+  return db.users.find(u => u.id === db.ownerId) || db.users.find(u => normalizeEmail(u.email)==="rafaellouzadaa@gmail.com") || null;
 }
-function registerUserAccount(name, email, password=""){
-  ensureAuthState();
-  const safeName = String(name || "").trim();
-  const normalized = normalizeEmail(email);
-  if(!safeName){ alert("Informe o nome do usuário."); return false; }
-  if(!normalized){ alert("Informe o e-mail do usuário."); return false; }
-  if(db.users.some(u => normalizeEmail(u.email) === normalized)){ alert("Este e-mail já está cadastrado."); return false; }
-  const user = { id: uid("user"), name: safeName, email: normalized, password: String(password || "").trim(), createdAt: new Date().toISOString() };
-  db.users.push(user);
-  db.currentUserId = user.id;
-  save();
-  authMode = "login";
-  return true;
+function userStatePayload(){
+  const userId=db.currentUserId||null;
+  return {
+    workouts: Array.isArray(db.workouts)?db.workouts.map(w=>({...w,userId})):[],
+    settings: db.settings || JSON.parse(JSON.stringify(DEFAULTS.settings)),
+    excludedExercises: db.excludedExercises || {A:[],B:[],C:[]},
+    customExercises: db.customExercises || {A:[],B:[],C:[]},
+    workoutPlans: db.workoutPlans || {A:null,B:null,C:null},
+    workoutNames: db.workoutNames || {A:"Treino A",B:"Treino B",C:"Treino C"},
+    myWorkouts: Array.isArray(db.myWorkouts)?db.myWorkouts:[],
+    workoutHistory: Array.isArray(db.workoutHistory)?db.workoutHistory.map(h=>({...h,userId})):[]
+  };
 }
-function loginWithEmail(email, password=""){
-  ensureAuthState();
-  const normalized = normalizeEmail(email);
+function hasUserData(payload){
+  return !!(payload && ((payload.myWorkouts||[]).length || (payload.workouts||[]).length || (payload.workoutHistory||[]).length || (payload.customExercises && Object.values(payload.customExercises).some(x=>Array.isArray(x)&&x.length))));
+}
+function legacyStateForEmail(email){
+  const normalized=normalizeEmail(email);
+  const legacyUser=db.users.find(u=>normalizeEmail(u.email)===normalized);
+  if(!legacyUser) return null;
+  return {
+    workouts:Array.isArray(db.workouts)?cloneJSON(db.workouts):[],
+    settings:cloneJSON(db.settings||DEFAULTS.settings),
+    excludedExercises:cloneJSON(db.excludedExercises||DEFAULTS.excludedExercises),
+    customExercises:cloneJSON(db.customExercises||DEFAULTS.customExercises),
+    workoutPlans:cloneJSON(db.workoutPlans||DEFAULTS.workoutPlans),
+    workoutNames:cloneJSON(db.workoutNames||DEFAULTS.workoutNames),
+    myWorkouts:Array.isArray(db.myWorkouts)?cloneJSON(db.myWorkouts):[],
+    workoutHistory:Array.isArray(db.workoutHistory)?cloneJSON(db.workoutHistory):[]
+  };
+}
+async function apiRequest(path, options={}){
+  if(!apiConfigured()) throw new Error("API não configurada.");
+  const headers={"Content-Type":"application/json",...(options.headers||{})};
+  const token=getAccessToken();
+  if(token) headers.Authorization=`Bearer ${token}`;
+  const response=await fetch(`${apiBaseUrl()}${path}`,{...options,headers});
+  let body=null;
+  try{ body=await response.json(); }catch(_){ body=null; }
+  if(!response.ok){
+    const message=body?.detail || `Erro ${response.status}`;
+    const err=new Error(message); err.status=response.status; throw err;
+  }
+  return body;
+}
+function applyUserState(serverState,user){
+  const incoming=serverState&&typeof serverState==="object"?serverState:{};
+  const authenticatedId=user.id;
+  db.workouts=Array.isArray(incoming.workouts)?incoming.workouts.map(w=>({...w,userId:authenticatedId})):[];
+  db.settings=(incoming.settings&&typeof incoming.settings==="object")?incoming.settings:cloneJSON(DEFAULTS.settings);
+  db.excludedExercises=incoming.excludedExercises||cloneJSON(DEFAULTS.excludedExercises);
+  db.customExercises=incoming.customExercises||cloneJSON(DEFAULTS.customExercises);
+  db.workoutPlans=incoming.workoutPlans||cloneJSON(DEFAULTS.workoutPlans);
+  db.workoutNames=incoming.workoutNames||cloneJSON(DEFAULTS.workoutNames);
+  db.myWorkouts=Array.isArray(incoming.myWorkouts)?incoming.myWorkouts:[];
+  db.workoutHistory=Array.isArray(incoming.workoutHistory)?incoming.workoutHistory.map(h=>({...h,userId:authenticatedId})):[];
+  db.users=[user];
+  db.currentUserId=user.id;
+  db.ownerId=user.id;
+  localStorage.setItem(KEY,JSON.stringify(db));
+}
+async function authenticateFromResponse(response, legacySnapshot){
+  setAccessToken(response.access_token);
+  const serverState=response.state || {};
+  const canMigrate=legacySnapshot && hasUserData(legacySnapshot) && !hasUserData(serverState);
+  applyUserState(serverState,response.user);
+  if(canMigrate){
+    db.workouts=legacySnapshot.workouts;
+    db.settings=legacySnapshot.settings;
+    db.excludedExercises=legacySnapshot.excludedExercises;
+    db.customExercises=legacySnapshot.customExercises;
+    db.workoutPlans=legacySnapshot.workoutPlans;
+    db.workoutNames=legacySnapshot.workoutNames;
+    db.myWorkouts=legacySnapshot.myWorkouts;
+    db.workoutHistory=legacySnapshot.workoutHistory;
+    await syncStateNow();
+  }
+  localStorage.setItem(KEY,JSON.stringify(db));
+}
+async function registerUserAccount(name,email,password=""){
+  const safeName=String(name||"").trim();
+  const normalized=normalizeEmail(email);
+  if(!safeName){ alert("Informe seu nome."); return false; }
   if(!normalized){ alert("Informe seu e-mail."); return false; }
-  const user = db.users.find(u => normalizeEmail(u.email) === normalized);
-  if(!user){ alert("Usuário não encontrado."); return false; }
-  const isOwnerAccount = normalizeEmail(user.email) === "rafaellouzadaa@gmail.com";
-  const hasStoredPassword = typeof user.password === "string" && user.password.trim().length > 0;
-  const submittedPassword = String(password || "").trim();
-  if(!hasStoredPassword && isOwnerAccount){
-    db.currentUserId = user.id; save(); return true;
-  }
-  if(!hasStoredPassword && !submittedPassword){
-    db.currentUserId = user.id; save(); return true;
-  }
-  if(user.password === submittedPassword || (!hasStoredPassword && !submittedPassword)){
-    db.currentUserId = user.id; save(); return true;
-  }
-  alert("E-mail ou senha inválidos.");
-  return false;
+  if(String(password||"").length<6){ alert("A senha deve ter pelo menos 6 caracteres."); return false; }
+  const legacySnapshot=legacyStateForEmail(normalized);
+  try{
+    const response=await apiRequest("/auth/register",{method:"POST",body:JSON.stringify({name:safeName,email:normalized,password:String(password)})});
+    await authenticateFromResponse(response,legacySnapshot);
+    authMode="login";
+    return true;
+  }catch(err){ alert(err.message||"Não foi possível criar a conta."); return false; }
 }
-function logoutUser(){
-  authMode = "login";
-  db.currentUserId = null;
-  save();
+async function loginWithEmail(email,password=""){
+  const normalized=normalizeEmail(email);
+  if(!normalized){ alert("Informe seu e-mail."); return false; }
+  if(!password){ alert("Informe sua senha."); return false; }
+  const legacySnapshot=legacyStateForEmail(normalized);
+  try{
+    const response=await apiRequest("/auth/login",{method:"POST",body:JSON.stringify({email:normalized,password:String(password)})});
+    await authenticateFromResponse(response,legacySnapshot);
+    return true;
+  }catch(err){ alert(err.message||"E-mail ou senha inválidos."); return false; }
+}
+async function logoutUser(){
+  try{ if(getAccessToken()) await apiRequest("/auth/logout",{method:"POST"}); }catch(_){ /* sessão já pode ter expirado */ }
+  setAccessToken("");
+  authMode="login";
+  stopIntervals();
+  state.workout=null;
+  db.currentUserId=null;
+  db.users=[];
+  localStorage.setItem(KEY,JSON.stringify(db));
   renderAuthScreen();
 }
-function handleLoginSubmit(event){
+async function handleLoginSubmit(event){
   event.preventDefault();
-  const email = document.getElementById("auth-email")?.value || "";
-  const password = document.getElementById("auth-password")?.value || "";
-  if(loginWithEmail(email, password)){
-    renderHome();
-  }
+  const button=event.submitter;
+  if(button) button.disabled=true;
+  const email=document.getElementById("auth-email")?.value||"";
+  const password=document.getElementById("auth-password")?.value||"";
+  if(await loginWithEmail(email,password)) renderHome();
+  else if(button) button.disabled=false;
   return false;
 }
-function handleRegisterSubmit(event){
+async function handleRegisterSubmit(event){
   event.preventDefault();
-  const name = document.getElementById("register-name")?.value || "";
-  const email = document.getElementById("register-email")?.value || "";
-  const password = document.getElementById("register-password")?.value || "";
-  if(registerUserAccount(name, email, password)){
-    renderHome();
-  }
+  const button=event.submitter;
+  if(button) button.disabled=true;
+  const name=document.getElementById("register-name")?.value||"";
+  const email=document.getElementById("register-email")?.value||"";
+  const password=document.getElementById("register-password")?.value||"";
+  const confirm=document.getElementById("register-password-confirm")?.value||"";
+  if(password!==confirm){ alert("As senhas não são iguais."); if(button) button.disabled=false; return false; }
+  if(await registerUserAccount(name,email,password)) renderHome();
+  else if(button) button.disabled=false;
   return false;
 }
-function toggleAuthMode(mode){
-  authMode = mode;
-  renderAuthScreen();
-}
+function toggleAuthMode(mode){ authMode=mode; renderAuthScreen(); }
 function renderAuthScreen(){
-  const ownerUser = getOwnerUser();
-  const ownerEmail = ownerUser?.email || "rafaellouzadaa@gmail.com";
-  const app = document.getElementById("app");
+  const app=document.getElementById("app");
   if(!app) return;
-  const isLogin = authMode !== "register";
-  app.innerHTML = `
+  const isLogin=authMode!=="register";
+  app.innerHTML=`
     <div class="auth-shell">
+      <div class="auth-brand">
+        <div class="auth-logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 8v8M4.5 10v4M2.5 11v2M17 8v8M19.5 10v4M21.5 11v2M7 12h10"></path></svg></div>
+        <div class="auth-brand-name">Meu Treino</div>
+        <p>Seu treino. Sua evolução.</p>
+      </div>
       <div class="auth-card">
-        <div class="eyebrow">ACESSO</div>
-        <h2>${isLogin ? "Entrar" : "Criar conta"}</h2>
-        <p class="muted">${isLogin ? "Seja bem-vindo(a) de volta." : "Cadastre um novo usuário para continuar."}</p>
-
-        <div class="auth-toggle">
-          <button type="button" class="auth-tab ${isLogin ? "active" : ""}" onclick="toggleAuthMode('login')">Entrar</button>
-          <button type="button" class="auth-tab ${!isLogin ? "active" : ""}" onclick="toggleAuthMode('register')">Criar conta</button>
+        <div class="auth-card-head">
+          <span class="eyebrow">${isLogin?"ACESSO À CONTA":"NOVA CONTA"}</span>
+          <h2>${isLogin?"Bem-vindo de volta":"Criar sua conta"}</h2>
+          <p class="muted">${isLogin?"Entre para continuar seu treino.":"Comece seu espaço pessoal de treinos."}</p>
         </div>
-
-        ${isLogin ? `
+        <div class="auth-toggle" role="tablist" aria-label="Autenticação">
+          <button type="button" class="auth-tab ${isLogin?"active":""}" onclick="toggleAuthMode('login')">Entrar</button>
+          <button type="button" class="auth-tab ${!isLogin?"active":""}" onclick="toggleAuthMode('register')">Criar conta</button>
+        </div>
+        ${isLogin?`
           <form onsubmit="return handleLoginSubmit(event)">
-            <label class="auth-field">
-              <span>E-mail</span>
-              <input id="auth-email" type="email" value="${esc(ownerEmail)}" autocomplete="email" required>
-            </label>
-            <label class="auth-field">
-              <span>Senha</span>
-              <input id="auth-password" type="password" placeholder="Opcional para a conta principal" autocomplete="current-password">
-            </label>
-            <button class="primary full" type="submit">Entrar</button>
+            <label class="auth-field"><span>E-mail</span><input id="auth-email" type="email" placeholder="seu@email.com" autocomplete="email" required></label>
+            <label class="auth-field"><span>Senha</span><div class="auth-password-wrap"><input id="auth-password" type="password" placeholder="Sua senha" autocomplete="current-password" required><button type="button" class="auth-password-toggle" onclick="togglePassword('auth-password',this)" aria-label="Mostrar senha">◉</button></div></label>
+            <button class="primary full auth-submit" type="submit">Entrar</button>
+            <button class="auth-link" type="button" onclick="alert('A recuperação de senha será disponibilizada em uma próxima etapa.')">Esqueci minha senha</button>
           </form>
-        ` : `
+        `:`
           <form onsubmit="return handleRegisterSubmit(event)">
-            <label class="auth-field">
-              <span>Nome</span>
-              <input id="register-name" type="text" placeholder="Seu nome" autocomplete="name" required>
-            </label>
-            <label class="auth-field">
-              <span>E-mail</span>
-              <input id="register-email" type="email" placeholder="seu@email.com" autocomplete="email" required>
-            </label>
-            <label class="auth-field">
-              <span>Senha</span>
-              <input id="register-password" type="password" placeholder="Opcional" autocomplete="new-password">
-            </label>
-            <button class="primary full" type="submit">Criar usuário</button>
+            <label class="auth-field"><span>Nome</span><input id="register-name" type="text" placeholder="Seu nome" autocomplete="name" required></label>
+            <label class="auth-field"><span>E-mail</span><input id="register-email" type="email" placeholder="seu@email.com" autocomplete="email" required></label>
+            <label class="auth-field"><span>Senha</span><div class="auth-password-wrap"><input id="register-password" type="password" placeholder="Mínimo de 6 caracteres" autocomplete="new-password" minlength="6" required><button type="button" class="auth-password-toggle" onclick="togglePassword('register-password',this)" aria-label="Mostrar senha">◉</button></div></label>
+            <label class="auth-field"><span>Confirmar senha</span><div class="auth-password-wrap"><input id="register-password-confirm" type="password" placeholder="Repita sua senha" autocomplete="new-password" minlength="6" required><button type="button" class="auth-password-toggle" onclick="togglePassword('register-password-confirm',this)" aria-label="Mostrar senha">◉</button></div></label>
+            <button class="primary full auth-submit" type="submit">Criar conta</button>
           </form>
         `}
-
-        <div class="auth-note">Conta principal: <b>${esc(ownerEmail)}</b></div>
       </div>
-    </div>
-  `;
+      <div class="auth-security-note"><span aria-hidden="true">✓</span> Seus dados ficam separados por conta e protegidos pela API.</div>
+    </div>`;
 }
-function bootApp(){
+function togglePassword(id,button){
+  const input=document.getElementById(id); if(!input) return;
+  const visible=input.type==="text"; input.type=visible?"password":"text";
+  if(button){button.textContent=visible?"◉":"◌";button.setAttribute("aria-label",visible?"Mostrar senha":"Ocultar senha");}
+}
+async function bootApp(){
   ensureAuthState();
-  if(!getCurrentUser()){
+  if(!apiConfigured()){
+    setAccessToken("");
     renderAuthScreen();
     return;
   }
-  renderHome();
+  const token=getAccessToken();
+  if(!token){ renderAuthScreen(); return; }
+  try{
+    const user=await apiRequest("/auth/me");
+    const serverState=await apiRequest("/state");
+    const legacySnapshot=legacyStateForEmail(user.email);
+    await authenticateFromResponse({access_token:token,user,state:serverState},legacySnapshot);
+    renderHome();
+  }catch(err){
+    setAccessToken("");
+    db.currentUserId=null;
+    db.users=[];
+    localStorage.setItem(KEY,JSON.stringify(db));
+    renderAuthScreen();
+  }
 }
+async function syncStateNow(){
+  if(!getAccessToken() || !apiConfigured()) return;
+  if(apiSyncInFlight){ apiSyncPending=true; return; }
+  apiSyncInFlight=true;
+  try{
+    await apiRequest("/state",{method:"PUT",body:JSON.stringify(userStatePayload())});
+  }catch(err){
+    if(err.status===401){ setAccessToken(""); db.currentUserId=null; db.users=[]; renderAuthScreen(); }
+    else console.warn("Sincronização da conta:",err);
+  }finally{
+    apiSyncInFlight=false;
+    if(apiSyncPending){ apiSyncPending=false; syncStateNow(); }
+  }
+}
+function queueApiSave(){
+  if(!getAccessToken()) return;
+  clearTimeout(apiSyncTimer);
+  apiSyncTimer=setTimeout(()=>syncStateNow(),350);
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(db)); queueApiSave(); }
 
-function save(){ localStorage.setItem(KEY, JSON.stringify(db)); }
 function pad(n){ return String(n).padStart(2,"0"); }
 function fmt(sec){ sec=Math.max(0,Math.floor(sec)); return `${pad(Math.floor(sec/3600))}:${pad(Math.floor(sec%3600/60))}:${pad(sec%60)}`; }
 function fmtShort(sec){ sec=Math.max(0,Math.floor(sec)); return `${pad(Math.floor(sec/60))}:${pad(sec%60)}`; }
@@ -658,7 +748,10 @@ async function generateAiPlan(){
   button.disabled=true; button.textContent="Gerando…"; showAiPlannerMessage("Gerando sugestão. Isso pode levar alguns segundos.");
   const controller=new AbortController(), timeout=window.setTimeout(()=>controller.abort(),30000);
   try{
-    const response=await fetch(`${aiPlanningApiUrl()}/ai/plan`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(input),signal:controller.signal});
+    const headers={"Content-Type":"application/json"};
+    const token=getAccessToken();
+    if(token) headers.Authorization=`Bearer ${token}`;
+    const response=await fetch(`${aiPlanningApiUrl()}/ai/plan`,{method:"POST",headers,body:JSON.stringify(input),signal:controller.signal});
     const data=await response.json().catch(()=>null);
     if(!response.ok) throw new Error(data?.detail||"Não foi possível gerar o planejamento agora.");
     aiPlanDraft=normalizeAiPlan(data);
@@ -877,7 +970,8 @@ function openSettings(){
     </section>`);
 }
 function exportData(){
-  const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
+  const payload=userStatePayload();
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob); a.download="meu-treino-backup.json"; a.click();
   URL.revokeObjectURL(a.href);
@@ -885,14 +979,18 @@ function exportData(){
 function importData(file){
   if(!file) return;
   const r=new FileReader();
-  r.onload=()=>{
+  r.onload=async()=>{
     try{
       const x=JSON.parse(r.result);
-      if(!x || typeof x!=="object" || !Array.isArray(x.workouts)) throw new Error("formato");
-      db=x;
-      if(!Array.isArray(db.users)) db.users=[];
-      if(!Array.isArray(db.workoutHistory)) db.workoutHistory=[];
-      if(!db.settings) db.settings=JSON.parse(JSON.stringify(DEFAULTS.settings));
+      if(!x || typeof x!=="object" || !Array.isArray(x.workouts) || !Array.isArray(x.myWorkouts)) throw new Error("formato");
+      db.workouts=x.workouts;
+      db.settings=x.settings||cloneJSON(DEFAULTS.settings);
+      db.excludedExercises=x.excludedExercises||cloneJSON(DEFAULTS.excludedExercises);
+      db.customExercises=x.customExercises||cloneJSON(DEFAULTS.customExercises);
+      db.workoutPlans=x.workoutPlans||cloneJSON(DEFAULTS.workoutPlans);
+      db.workoutNames=x.workoutNames||cloneJSON(DEFAULTS.workoutNames);
+      db.myWorkouts=x.myWorkouts;
+      db.workoutHistory=x.workoutHistory||[];
       ensureAuthState(); ensurePhase2Data(); save();
       openSettings(); alert("Dados importados com sucesso.");
     }catch(e){ alert("Arquivo inválido."); }
@@ -914,7 +1012,7 @@ function repsForSet(reps,i){ const parts=String(reps||"").split("/").map(x=>x.tr
 function cloneJSON(x){ return JSON.parse(JSON.stringify(x)); }
 function normalizeWorkout(w){
   return {
-    id:w.id||uid("treino-"), name:String(w.name||"Treino Personalizado"), description:String(w.description||""), level:w.level||"Personalizado",
+    id:w.id||uid("treino-"), userId:w.userId||db.currentUserId||null, name:String(w.name||"Treino Personalizado"), description:String(w.description||""), level:w.level||"Personalizado",
     active:w.active!==false, createdAt:w.createdAt||new Date().toISOString(), updatedAt:w.updatedAt||new Date().toISOString(),
     aiGenerated:!!w.aiGenerated, aiNotes:Array.isArray(w.aiNotes)?w.aiNotes:[],
     groups:Array.isArray(w.groups)?w.groups.map((g,gi)=>({
@@ -941,12 +1039,11 @@ function buildMigratedWorkout(code,name){
   });
 }
 function ensurePhase2Data(){
-  if(!Array.isArray(db.myWorkouts)){
-    db.myWorkouts=["A","B","C"].map(c=>buildMigratedWorkout(c, c==="A"?"Treino Básico":`Treino ${c}`));
-  }
+  // Do not seed A/B/C for a new account. Legacy A/B/C data is migrated only
+  // when the authenticated e-mail matches an existing local account.
+  if(!Array.isArray(db.myWorkouts)) db.myWorkouts=[];
   db.myWorkouts=db.myWorkouts.map(normalizeWorkout);
   if(!Array.isArray(db.workoutHistory)) db.workoutHistory=[];
-  save();
 }
 function getMyWorkout(id){ ensurePhase2Data(); return db.myWorkouts.find(w=>w.id===id); }
 function workoutExerciseCount(w){ return w.groups.reduce((n,g)=>n+g.exercises.length,0); }
@@ -1203,13 +1300,13 @@ function renderWorkout(){const e=currentExercise(),all=state.workout.exercises,l
 function setValue(i,k,v){const e=currentExercise();if(e?.sets?.[i]){e.sets[i][k]=v;}}
 function toggleSet(){return;}
 function allSetsDone(e){const count=exerciseSetCount(e);if(!count)return false;while(e.sets.length<count)e.sets.push({number:e.sets.length+1,reps:"",weight:"",done:false,completedAt:null});return e.sets.slice(0,count).every(s=>s.done);}
-function finishWorkout(){if(!state.workout)return;const done=state.workout;stopIntervals();done.totalTime=Math.round((Date.now()-state.workoutTimerStart)/1000);done.endTime=new Date().toISOString();done.completedExercises=done.exercises.filter(e=>e.completed).length;done.totalSets=done.exercises.reduce((n,e)=>n+e.sets.filter(s=>s.done).length,0);const duplicate=db.workoutHistory.some(h=>h.workoutId===done.workoutId&&h.executionDate===done.date&&Math.abs(new Date(h.completedAt)-new Date(done.endTime))<60000);if(!duplicate){db.workoutHistory.push({id:uid('hist-'),workoutId:done.workoutId,name:done.type,date:done.date,executionDate:done.date,startedAt:done.startedAt,completedAt:done.endTime,totalTime:done.totalTime,completedExercises:done.completedExercises,totalSets:done.totalSets,workoutSnapshot:cloneJSON(done)});db.workouts.push(done);save();}state.workout=null;renderCompletion(done);}
+function finishWorkout(){if(!state.workout)return;const done=state.workout;done.userId=db.currentUserId||null;stopIntervals();done.totalTime=Math.round((Date.now()-state.workoutTimerStart)/1000);done.endTime=new Date().toISOString();done.completedExercises=done.exercises.filter(e=>e.completed).length;done.totalSets=done.exercises.reduce((n,e)=>n+e.sets.filter(s=>s.done).length,0);const duplicate=db.workoutHistory.some(h=>h.workoutId===done.workoutId&&h.executionDate===done.date&&Math.abs(new Date(h.completedAt)-new Date(done.endTime))<60000);if(!duplicate){db.workoutHistory.push({id:uid('hist-'),userId:db.currentUserId||null,workoutId:done.workoutId,name:done.type,date:done.date,executionDate:done.date,startedAt:done.startedAt,completedAt:done.endTime,totalTime:done.totalTime,completedExercises:done.completedExercises,totalSets:done.totalSets,workoutSnapshot:cloneJSON(done)});db.workouts.push(done);save();}state.workout=null;renderCompletion(done);}
 function renderCompletion(done){layout(`<section class="complete"><div class="complete-icon">✓</div><span class="eyebrow">TREINO FINALIZADO</span><h2>Excelente trabalho!</h2><p><b>${esc(done.type)}</b> concluído automaticamente em ${dateBR(done.date)}.</p><div class="summary-grid"><div><b>${fmt(done.totalTime)}</b><span>tempo total</span></div><div><b>${done.completedExercises}</b><span>exercícios</span></div><div><b>${done.totalSets}</b><span>séries</span></div></div><button class="primary full" onclick="go('calendar')">Ver no calendário</button><button class="secondary full" onclick="go('home')">Voltar ao início</button></section>`);}
 function renderCalendar(){const y=calDate.getFullYear(),m=calDate.getMonth(),first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),offset=(first+6)%7,cells=[];for(let i=0;i<offset;i++)cells.push('<div class="cal-day empty"></div>');for(let d=1;d<=days;d++){const iso=`${y}-${pad(m+1)}-${pad(d)}`,ws=(db.workoutHistory||[]).filter(w=>w.date===iso);cells.push(`<button class="cal-day ${ws.length?'has':''}" onclick="calendarDay('${iso}')"><span>${d}</span>${ws.map(w=>`<i>✓ ${esc(f2DisplayName(w.name))}</i><em>${fmtShort(w.totalTime||0)}</em>`).join("")}</button>`);}layout(`<div class="calendar-head"><button class="iconbtn" onclick="changeMonth(-1)" aria-label="Mês anterior" title="Mês anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"></path></svg></button><h2>${monthLabel(y,m)}</h2><button class="iconbtn" onclick="changeMonth(1)" aria-label="Próximo mês" title="Próximo mês"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"></path></svg></button></div><div class="week"><b>SEG</b><b>TER</b><b>QUA</b><b>QUI</b><b>SEX</b><b>SÁB</b><b>DOM</b></div><div class="calendar">${cells.join("")}</div>`,"calendar");}
 function calendarDay(iso){const ws=(db.workoutHistory||[]).filter(w=>w.date===iso);layout(`<button class="back" onclick="renderCalendar()"><span class="back-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"></path></svg></span><span>Calendário</span></button><span class="pill">${dateBR(iso)}</span><h2>${ws.length?'Treinos realizados':'Nenhum treino registrado'}</h2>${ws.map(w=>`<button class="list-card" onclick="showWorkoutDetails('${w.id}')"><span class="badge">✓</span><div><b>${esc(f2DisplayName(w.name))}</b><small>${fmt(w.totalTime)} • ${w.completedExercises||0} exercícios • ${w.totalSets||0} séries</small></div><span>›</span></button>`).join("")} ${!ws.length?'<div class="empty big">Este dia ainda não possui treino concluído.</div>':''}`,'calendar');}
 function showWorkoutDetails(id){const h=(db.workoutHistory||[]).find(x=>x.id===id)|| (db.workouts||[]).find(x=>x.id===id);if(!h)return;const w=h.workoutSnapshot||h;layout(`<button class="back" onclick="calendarDay('${h.date}')"><span class="back-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"></path></svg></span><span>Voltar</span></button><h2>${esc(f2DisplayName(h.name||w.type))}</h2><div class="stats"><div><b>${dateBR(h.date)}</b><span>data</span></div><div><b>${fmt(h.totalTime||0)}</b><span>tempo</span></div><div><b>${h.totalSets||0}</b><span>séries</span></div></div><div class="section">${(w.exercises||[]).map((e,i)=>`<div class="exercise-row"><div><b>${i+1}. ${esc(f2DisplayName(e.name))}</b><small>${(e.sets||[]).filter(s=>s.done).length} séries concluídas</small></div></div>`).join('')}</div>`,'calendar');}
 function renderHistory(){const list=[...(db.workoutHistory||[])].reverse();layout(`<h2>Histórico</h2><p class="muted">${list.length} treino(s) concluído(s).</p>${list.length?`<div class="list">${list.map(w=>`<button class="list-card history-card" onclick="showWorkoutDetails('${w.id}')"><span class="badge">✓</span><div class="history-card-content"><b>${esc(f2DisplayName(w.name))}</b><div class="history-card-meta"><span class="history-card-date">${dateBR(w.date)}</span><span>${fmt(w.totalTime)}</span><span>${w.completedExercises||0} exercícios</span></div></div><span class="list-chevron">›</span></button>`).join('')}</div>`:'<div class="empty big">Ainda não há treinos concluídos.</div>'}`,'history');}
-function manualRegister(date,type){const w=db.myWorkouts?.find(x=>x.id===`legacy-${type}`);if(!w)return;const id=uid('hist-');db.workoutHistory.push({id,workoutId:w.id,name:w.name,date,executionDate:date,startedAt:null,completedAt:null,totalTime:0,completedExercises:workoutExerciseCount(w),totalSets:workoutSetTotal(w),manual:true,workoutSnapshot:{type:w.name,date,exercises:flattenMyWorkout(w)}});save();calendarDay(date);}
+function manualRegister(date,type){const w=db.myWorkouts?.find(x=>x.id===`legacy-${type}`);if(!w)return;const id=uid('hist-');db.workoutHistory.push({id,userId:db.currentUserId||null,workoutId:w.id,name:w.name,date,executionDate:date,startedAt:null,completedAt:null,totalTime:0,completedExercises:workoutExerciseCount(w),totalSets:workoutSetTotal(w),manual:true,workoutSnapshot:{type:w.name,date,exercises:flattenMyWorkout(w)}});save();calendarDay(date);}
 function renderDashboard(){
   const recent=db.workouts[db.workouts.length-1];
   const month=todayISO().slice(0,7);

@@ -1,3 +1,37 @@
+## v50 — Login, autenticação por API e isolamento multiusuário
+
+- Login e cadastro redesenhados com interface mobile-first.
+- Autenticação migrada para a API FastAPI com token JWT.
+- Senhas armazenadas no backend somente como hash scrypt.
+- Criado armazenamento persistente por usuário no banco (`users` + `user_states`).
+- Novo usuário começa sem treinos, histórico, calendário ou dados privados de outro usuário.
+- Estado de aplicação carregado e salvo pela API autenticada.
+- Backend valida a identidade pelo token e nunca aceita `userId` do frontend como autoridade.
+- IA agora exige autenticação antes de gerar planos.
+- LocalStorage permanece apenas como cache/estado local e não é mecanismo de autorização.
+- Migração legada segura: dados locais só são migrados quando o e-mail autenticado corresponde a uma conta local existente; novos e-mails recebem estado vazio.
+- Exportação/importação passou a operar somente sobre o estado do usuário, sem incluir contas de outros usuários.
+- Estrutura preparada para PostgreSQL em produção e SQLite para desenvolvimento local.
+
+### Configuração do backend v50
+
+Configure no Render (ou outro provedor FastAPI):
+
+- `DATABASE_URL`: URL do PostgreSQL de produção.
+- `JWT_SECRET`: segredo aleatório com pelo menos 32 caracteres.
+- `ACCESS_TOKEN_MINUTES`: duração do token, padrão 60.
+- `OPENAI_API_KEY`: chave da IA, somente no backend.
+- `OPENAI_MODEL`: modelo utilizado pela IA.
+- `ALLOWED_ORIGINS`: origem exata do GitHub Pages.
+
+O banco de produção deve ser PostgreSQL. O arquivo `render.yaml` deixa `DATABASE_URL` e `JWT_SECRET` como variáveis secretas para serem configuradas no serviço.
+
+### Arquitetura
+
+`PWA → API FastAPI → autenticação/autorização → PostgreSQL`
+
+A API identifica o usuário pelo token e associa o estado persistente ao `user_id`. O frontend não escolhe o proprietário dos dados.
+
 
 ## v49 — Ajustes de navegação, calendário, IA e cards
 
