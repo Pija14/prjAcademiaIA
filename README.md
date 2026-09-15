@@ -1,3 +1,11 @@
+## v43 — Correção da edição de carga (Kg)
+
+- Corrigido o bloqueio de interação dos inputs de séries e carga na tela de execução.
+- Campos de reps e Kg agora recebem foco e aceitam edição normalmente.
+- Corrigida a largura dos inputs para ocupar corretamente suas colunas.
+- Mantido teclado numérico e comportamento existente.
+- Cache atualizado para v43.
+
 ## v42 — Configurações de tempo e campos de execução
 
 - Campos de séries, repetições e carga padronizados para edição confortável no celular.

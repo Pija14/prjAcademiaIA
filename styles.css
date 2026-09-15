@@ -1095,7 +1095,6 @@ h3 {
 
 .set-row input,
 .check {
-  width: 44px;
   height: 44px;
   display: grid;
   place-items: center;
@@ -1105,7 +1104,6 @@ h3 {
   font-size: var(--text-lg);
   font-weight: var(--weight-bold);
   user-select: none;
-  pointer-events: none;
 }
 
 .check.done {
@@ -1913,6 +1911,7 @@ h3 {
 }
 
 .set-row input {
+  width: 100%;
   min-width: 0;
   min-height: 52px;
   padding: 12px 14px;
@@ -1925,6 +1924,8 @@ h3 {
   text-align: center;
   -webkit-appearance: none;
   appearance: none;
+  pointer-events: auto;
+  cursor: text;
 }
 
 .set-row input:focus-visible {
