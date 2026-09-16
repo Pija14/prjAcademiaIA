@@ -8,85 +8,55 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon.svg">
   <title>GymIA</title>
-  <link rel="stylesheet" href="styles.css?v=56">
-  <link rel="stylesheet" href="home-layout.css?v=56">
+  <link rel="stylesheet" href="styles.css?v=57">
+  <link rel="stylesheet" href="home-layout.css?v=57">
   <style>
-    /* Login GymIA — layout fiel ao PrjAcademia. Somente apresentação. */
     .gymia-login{position:fixed;inset:0;z-index:99999;display:flex;justify-content:center;overflow:hidden;background:#fff;color:#0A192B;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .gymia-login__screen{width:min(100%,720px);height:100dvh;box-sizing:border-box;padding:18px 42px 24px;display:flex;flex-direction:column;align-items:center;background:#fff;overflow:hidden}
-    .gymia-login__brand{width:100%;display:flex;flex-direction:column;align-items:center;margin:0 0 38px;flex:0 0 auto}
-    .gymia-login__logo{width:min(450px,82vw);height:auto;display:block;object-fit:contain}
-    .gymia-login__tagline{margin:2px 0 0;font-size:22px;line-height:1.2;font-weight:600;letter-spacing:-.3px;color:#718096;text-align:center}
-    .gymia-login__form{width:100%;display:grid;gap:24px;position:relative}
-    .gymia-login__field{height:100px;border:1px solid #DCE5F0;border-radius:28px;background:#F8FAFD;display:flex;align-items:center;padding:0 31px;box-sizing:border-box;box-shadow:0 3px 12px rgba(10,25,43,.035)}
+    .gymia-login__screen{width:min(100%,720px);height:100dvh;box-sizing:border-box;padding:14px 42px 18px;display:flex;flex-direction:column;align-items:center;background:#fff;overflow:hidden}
+    .gymia-login__brand{width:100%;display:flex;flex-direction:column;align-items:center;margin:0 0 22px;flex:0 0 auto}
+    .gymia-login__logo{width:min(300px,68vw);height:auto;display:block;object-fit:contain}
+    .gymia-login__tagline{margin:3px 0 0;font-size:21px;line-height:1.15;font-weight:600;letter-spacing:-.3px;color:#718096;text-align:center}
+    .gymia-login__form{width:100%;display:grid;gap:16px;position:relative}
+    .gymia-login__field{height:82px;border:1px solid #DCE5F0;border-radius:25px;background:#F8FAFD;display:flex;align-items:center;padding:0 27px;box-sizing:border-box;box-shadow:0 3px 12px rgba(10,25,43,.035)}
     .gymia-login__field:focus-within{border-color:#9CBDE7;box-shadow:0 0 0 3px rgba(45,108,223,.10)}
-    .gymia-login__field svg{width:31px;height:31px;flex:0 0 auto;color:#34495E}
-    .gymia-login__field input{width:100%;height:100%;border:0;outline:0;background:transparent;margin-left:21px;font-size:25px;color:#0A192B}
+    .gymia-login__field svg{width:29px;height:29px;flex:0 0 auto;color:#34495E}
+    .gymia-login__field input{width:100%;height:100%;border:0;outline:0;background:transparent;margin-left:19px;font-size:23px;color:#0A192B}
     .gymia-login__field input::placeholder{color:#7B8CA1;opacity:1}
-    .gymia-login__eye{border:0;background:transparent;padding:10px;color:#34495E;display:grid;place-items:center;flex:0 0 auto}
-    .gymia-login__eye svg{margin:0;width:31px;height:31px}
-    .gymia-login__primary{height:100px;border-radius:28px;font-size:27px;font-weight:800;background:#0A192B;color:#fff;border:0;box-shadow:0 12px 24px rgba(10,25,43,.16);display:flex;align-items:center;justify-content:center;gap:24px}
-    .gymia-login__arrow{font-size:39px;font-weight:400;line-height:1}
-    .gymia-login__options{display:flex;justify-content:space-between;align-items:center;padding:0 13px;margin-top:-2px}
-    .gymia-login__remember{display:flex;align-items:center;gap:14px;font-size:22px;color:#34495E;cursor:pointer}
-    .gymia-login__remember input{width:30px;height:30px;accent-color:#2D6CDF}
-    .gymia-login__link{border:0;background:none;color:#1757C7;font-size:22px;font-weight:700;padding:4px}
-    .gymia-login__or{display:flex;align-items:center;gap:20px;color:#718096;font-size:21px;font-weight:700;margin:0}
+    .gymia-login__eye{border:0;background:transparent;padding:8px;color:#34495E;display:grid;place-items:center;flex:0 0 auto}
+    .gymia-login__eye svg{margin:0;width:29px;height:29px}
+    .gymia-login__primary{height:82px;border-radius:25px;font-size:25px;font-weight:800;background:#0A192B;color:#fff;border:0;box-shadow:0 12px 24px rgba(10,25,43,.16);display:flex;align-items:center;justify-content:center;gap:22px}
+    .gymia-login__arrow{font-size:36px;font-weight:400;line-height:1}
+    .gymia-login__options{display:flex;justify-content:space-between;align-items:center;padding:0 9px;margin-top:-1px}
+    .gymia-login__remember{display:flex;align-items:center;gap:11px;font-size:18px;color:#34495E;cursor:pointer}
+    .gymia-login__remember input{width:23px;height:23px;accent-color:#2D6CDF}
+    .gymia-login__link{border:0;background:none;color:#1757C7;font-size:18px;font-weight:700;padding:4px}
+    .gymia-login__or{display:flex;align-items:center;gap:16px;color:#718096;font-size:18px;font-weight:700;margin:0}
     .gymia-login__or:before,.gymia-login__or:after{content:"";height:2px;background:#D5DFE9;flex:1}
-    .gymia-login__secondary{height:100px;border-radius:28px;background:#fff;border:2px solid #0A192B;color:#0A192B;font-size:26px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:20px}
-    .gymia-login__secondary svg{width:31px;height:31px}
-    .gymia-login__error{display:none;color:#B42318;background:#FEF3F2;border:1px solid #FECACA;border-radius:14px;padding:12px 15px;font-size:14px;font-weight:700}
+    .gymia-login__secondary{height:82px;border-radius:25px;background:#fff;border:2px solid #0A192B;color:#0A192B;font-size:23px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:17px}
+    .gymia-login__secondary svg{width:29px;height:29px}
+    .gymia-login__error{display:none;color:#B42318;background:#FEF3F2;border:1px solid #FECACA;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700}
     .gymia-login__error.show{display:block}
-    .gymia-login__register-title{font-size:25px;font-weight:800;margin-bottom:4px}
-    .gymia-login__register-note{font-size:14px;color:#718096;margin:0 0 4px}
-    .gymia-login__back{border:0;background:none;color:#1757C7;font-size:16px;font-weight:700;padding:8px}
-    @media(max-width:600px){
-      .gymia-login__screen{padding-left:42px;padding-right:42px}
-      .gymia-login__logo{width:min(450px,82vw)}
-    }
+    .gymia-login__register-title{font-size:24px;font-weight:800;margin-bottom:0}
+    .gymia-login__register-note{font-size:14px;color:#718096;margin:0}
+    .gymia-login__back{border:0;background:none;color:#1757C7;font-size:16px;font-weight:700;padding:6px}
     @media(max-width:390px){
-      .gymia-login__screen{padding:14px 18px 20px}
-      .gymia-login__brand{margin-bottom:24px}
-      .gymia-login__logo{width:88vw}
-      .gymia-login__tagline{font-size:18px}
-      .gymia-login__form{gap:14px}
-      .gymia-login__field,.gymia-login__primary,.gymia-login__secondary{height:62px;border-radius:18px}
-      .gymia-login__field{padding:0 18px}
-      .gymia-login__field svg,.gymia-login__eye svg{width:23px;height:23px}
-      .gymia-login__field input{font-size:16px;margin-left:13px}
-      .gymia-login__options{padding:0 4px}
-      .gymia-login__remember,.gymia-login__link{font-size:14px}
-      .gymia-login__remember{gap:9px}
-      .gymia-login__remember input{width:19px;height:19px}
-      .gymia-login__primary{font-size:16px}
-      .gymia-login__arrow{font-size:27px}
-      .gymia-login__or{font-size:13px;gap:14px}
-      .gymia-login__secondary{font-size:16px;gap:12px}
-      .gymia-login__secondary svg{width:22px;height:22px}
+      .gymia-login__screen{padding:12px 18px 16px}.gymia-login__brand{margin-bottom:18px}.gymia-login__logo{width:72vw}.gymia-login__tagline{font-size:18px}.gymia-login__form{gap:12px}.gymia-login__field,.gymia-login__primary,.gymia-login__secondary{height:62px;border-radius:18px}.gymia-login__field{padding:0 18px}.gymia-login__field svg,.gymia-login__eye svg{width:23px;height:23px}.gymia-login__field input{font-size:16px;margin-left:13px}.gymia-login__options{padding:0 4px}.gymia-login__remember,.gymia-login__link{font-size:14px}.gymia-login__remember{gap:8px}.gymia-login__remember input{width:19px;height:19px}.gymia-login__primary{font-size:16px}.gymia-login__arrow{font-size:27px}.gymia-login__or{font-size:13px;gap:12px}.gymia-login__secondary{font-size:16px;gap:11px}.gymia-login__secondary svg{width:22px;height:22px}
     }
   </style>
 </head>
 <body>
   <div id="app"></div>
   <script src="config.js"></script>
-  <script src="app.js?v=56"></script>
+  <script src="app.js?v=57"></script>
   <script>
-    /* Mantém a autenticação do app.js e substitui somente a apresentação. */
     window._gymiaAuthMode='login';
     window.toggleAuthMode=function(mode){window._gymiaAuthMode=mode==='register'?'register':'login';window.renderAuthScreen();};
     window.renderAuthScreen=function(){
-      const app=document.getElementById('app');
-      if(!app)return;
-      const isLogin=window._gymiaAuthMode!=='register';
-      const icon=(type)=>{
-        if(type==='mail')return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>';
-        if(type==='lock')return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v3"/></svg>';
-        if(type==='eye')return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>';
-        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 3.4-6 8-6s7.2 2 8 6"/></svg>';
-      };
-      app.innerHTML=`<section id="gymia-login" class="gymia-login" aria-label="Login GymIA"><div class="gymia-login__screen"><div class="gymia-login__brand"><img class="gymia-login__logo" src="https://pija14.github.io/PrjAcademia/logo-gymia.svg?v=56" alt="GymIA"><div class="gymia-login__tagline">Seu treino, mais inteligente</div></div><form class="gymia-login__form" novalidate onsubmit="return ${isLogin?'handleLoginSubmit(event)':'handleRegisterSubmit(event)'}">${isLogin?`<label class="gymia-login__field">${icon('user')}<input id="auth-email" type="email" autocomplete="email" placeholder="E-mail ou usuário" aria-label="E-mail ou usuário" required></label><label class="gymia-login__field">${icon('lock')}<input id="auth-password" type="password" autocomplete="current-password" placeholder="Senha" aria-label="Senha" required><button type="button" class="gymia-login__eye" onclick="togglePassword('auth-password',this)" aria-label="Mostrar senha">${icon('eye')}</button></label><div class="gymia-login__error" id="gymia-login-error"></div><button class="gymia-login__primary" type="submit"><span>Entrar</span><span class="gymia-login__arrow">→</span></button><div class="gymia-login__options"><label class="gymia-login__remember"><input type="checkbox" checked><span>Manter conectado</span></label><button class="gymia-login__link" type="button" onclick="alert('A recuperação de senha será disponibilizada em uma próxima etapa.')">Esqueceu a senha?</button></div><div class="gymia-login__or">ou</div><button class="gymia-login__secondary" type="button" onclick="toggleAuthMode('register')">${icon('user')}<span>Criar uma conta</span></button>`:`<div class="gymia-login__register-title">Criar uma conta</div><p class="gymia-login__register-note">Preencha seus dados para continuar.</p><label class="gymia-login__field">${icon('user')}<input id="register-name" type="text" autocomplete="name" placeholder="Nome" required></label><label class="gymia-login__field">${icon('mail')}<input id="register-email" type="email" autocomplete="email" placeholder="E-mail" required></label><label class="gymia-login__field">${icon('lock')}<input id="register-password" type="password" autocomplete="new-password" placeholder="Senha" minlength="6" required><button type="button" class="gymia-login__eye" onclick="togglePassword('register-password',this)" aria-label="Mostrar senha">${icon('eye')}</button></label><label class="gymia-login__field">${icon('lock')}<input id="register-password-confirm" type="password" autocomplete="new-password" placeholder="Confirmar senha" minlength="6" required><button type="button" class="gymia-login__eye" onclick="togglePassword('register-password-confirm',this)" aria-label="Mostrar senha">${icon('eye')}</button></label><button class="gymia-login__primary" type="submit"><span>Criar conta</span><span class="gymia-login__arrow">→</span></button><button class="gymia-login__back" type="button" onclick="toggleAuthMode('login')">Voltar para Entrar</button>`}</form></div></section>`;
+      const app=document.getElementById('app');if(!app)return;const isLogin=window._gymiaAuthMode!=='register';
+      const icon=(type)=>{if(type==='mail')return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>';if(type==='lock')return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v3"/></svg>';if(type==='eye')return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>';return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 3.4-6 8-6s7.2 2 8 6"/></svg>';};
+      app.innerHTML=`<section id="gymia-login" class="gymia-login" aria-label="Login GymIA"><div class="gymia-login__screen"><div class="gymia-login__brand"><img class="gymia-login__logo" src="assets/gymia-logo.svg?v=57" alt="GymIA"><div class="gymia-login__tagline">Seu treino, mais inteligente</div></div><form class="gymia-login__form" novalidate onsubmit="return ${isLogin?'handleLoginSubmit(event)':'handleRegisterSubmit(event)'}">${isLogin?`<label class="gymia-login__field">${icon('user')}<input id="auth-email" type="email" autocomplete="email" placeholder="E-mail ou usuário" aria-label="E-mail ou usuário" required></label><label class="gymia-login__field">${icon('lock')}<input id="auth-password" type="password" autocomplete="current-password" placeholder="Senha" aria-label="Senha" required><button type="button" class="gymia-login__eye" onclick="togglePassword('auth-password',this)" aria-label="Mostrar senha">${icon('eye')}</button></label><div class="gymia-login__error" id="gymia-login-error"></div><button class="gymia-login__primary" type="submit"><span>Entrar</span><span class="gymia-login__arrow">→</span></button><div class="gymia-login__options"><label class="gymia-login__remember"><input type="checkbox" checked><span>Manter conectado</span></label><button class="gymia-login__link" type="button" onclick="alert('A recuperação de senha será disponibilizada em uma próxima etapa.')">Esqueceu a senha?</button></div><div class="gymia-login__or">ou</div><button class="gymia-login__secondary" type="button" onclick="toggleAuthMode('register')">${icon('user')}<span>Criar uma conta</span></button>`:`<div class="gymia-login__register-title">Criar uma conta</div><p class="gymia-login__register-note">Preencha seus dados para continuar.</p><label class="gymia-login__field">${icon('user')}<input id="register-name" type="text" autocomplete="name" placeholder="Nome" required></label><label class="gymia-login__field">${icon('mail')}<input id="register-email" type="email" autocomplete="email" placeholder="E-mail" required></label><label class="gymia-login__field">${icon('lock')}<input id="register-password" type="password" autocomplete="new-password" placeholder="Senha" minlength="6" required><button type="button" class="gymia-login__eye" onclick="togglePassword('register-password',this)" aria-label="Mostrar senha">${icon('eye')}</button></label><label class="gymia-login__field">${icon('lock')}<input id="register-password-confirm" type="password" autocomplete="new-password" placeholder="Confirmar senha" minlength="6" required><button type="button" class="gymia-login__eye" onclick="togglePassword('register-password-confirm',this)" aria-label="Mostrar senha">${icon('eye')}</button></label><button class="gymia-login__primary" type="submit"><span>Criar conta</span><span class="gymia-login__arrow">→</span></button><button class="gymia-login__back" type="button" onclick="toggleAuthMode('login')">Voltar para Entrar</button>`}</form></div></section>`;
     };
-    if(typeof getAccessToken==='function' ? !getAccessToken() : true) window.renderAuthScreen();
+    if(typeof getAccessToken==='function'?!getAccessToken():true)window.renderAuthScreen();
   </script>
 </body>
 </html>
