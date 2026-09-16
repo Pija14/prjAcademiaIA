@@ -36,15 +36,16 @@
 </head>
 <body>
   <div id="app"></div>
-  <!-- Optional local deployment configuration. This file is intentionally not tracked. -->
   <script src="config.js"></script>
   <script src="app.js?v=50"></script>
   <script>
-    /* Mantém toda a lógica existente e substitui somente a apresentação da autenticação. */
+    /* Mantém a lógica existente e substitui somente a apresentação da autenticação. */
+    window._gymiaAuthMode='login';
+    window.toggleAuthMode=function(mode){window._gymiaAuthMode=mode==='register'?'register':'login';window.renderAuthScreen();};
     window.renderAuthScreen=function(){
       const app=document.getElementById('app');
       if(!app)return;
-      const isLogin=window.authMode!=='register';
+      const isLogin=window._gymiaAuthMode!=='register';
       app.innerHTML=`
         <div class="gymia-auth">
           <div class="gymia-auth__brand"><div class="gymia-auth__logo" aria-hidden="true"></div><div class="gymia-auth__name">GymIA</div></div>
