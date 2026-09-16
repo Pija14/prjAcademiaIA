@@ -1,0 +1,171 @@
+/* GymIA — home screen visual layer
+   Only targets the existing home/dashboard markup.
+   No application logic or interaction handlers are changed. */
+
+.dashboard-header {
+  position: relative;
+  margin: 4px 0 18px;
+  padding: 18px 18px 18px 86px;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  border: 1px solid #dbe3e8;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef4f8 100%);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+  overflow: hidden;
+}
+
+.dashboard-header::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  width: 56px;
+  height: 56px;
+  transform: translateY(-50%);
+  border-radius: 16px;
+  background: #ffffff url("./assets/gymia-logo.svg") center / 74px 70px no-repeat;
+  box-shadow: 0 4px 14px rgba(10, 25, 43, .10);
+}
+
+.dashboard-header h2 {
+  margin: 4px 0 0;
+  color: #0a192b;
+  font-size: clamp(22px, 6vw, 28px);
+  letter-spacing: -.035em;
+}
+
+.dashboard-header .eyebrow {
+  color: #7b8ca1;
+  letter-spacing: .14em;
+}
+
+.dashboard-main {
+  position: relative;
+  overflow: hidden;
+  padding: 22px;
+  border: 0;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #0a192b 0%, #163352 100%);
+  box-shadow: 0 14px 34px rgba(10, 25, 43, .18);
+}
+
+.dashboard-main::after {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  right: -70px;
+  top: -72px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, .13);
+  pointer-events: none;
+}
+
+.dashboard-main-top,
+.dashboard-main > * {
+  position: relative;
+  z-index: 1;
+}
+
+.dashboard-main h3 {
+  margin: 5px 0 0;
+  color: #ffffff;
+  font-size: 22px;
+  letter-spacing: -.02em;
+}
+
+.dashboard-main .eyebrow,
+.dashboard-main p {
+  color: #c8d5e2;
+}
+
+.dashboard-chip {
+  min-width: 54px;
+  min-height: 54px;
+  padding: 0 10px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 16px;
+  background: rgba(34,197,94,.16);
+  color: #86efac;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.dashboard-main .progress,
+.dashboard-main .progress-bar,
+.dashboard-main progress {
+  accent-color: #22c55e;
+}
+
+.dashboard-main .stat-item b {
+  color: #ffffff;
+}
+
+.dashboard-main .stat-item span {
+  color: #b9c8d7;
+}
+
+.recent-workout {
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 18px;
+  border-color: #dbe3e8;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, .05);
+}
+
+.recent-workout h3 {
+  margin: 5px 0 4px;
+  color: #0a192b;
+}
+
+.recent-workout p {
+  margin: 0;
+  color: #5f6f7c;
+}
+
+.monthly-summary {
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 18px;
+}
+
+.monthly-summary h3 {
+  margin-top: 0;
+  color: #0a192b;
+}
+
+.bottomnav {
+  border-top-color: #dbe3e8;
+  background: rgba(255,255,255,.96);
+  backdrop-filter: blur(14px);
+}
+
+.bottomnav button.active {
+  color: #0a7a3a;
+  background: #e8f7ee;
+}
+
+@media (max-width: 420px) {
+  .dashboard-header {
+    padding-left: 80px;
+    min-height: 72px;
+  }
+
+  .dashboard-header::before {
+    left: 12px;
+    width: 54px;
+    height: 54px;
+  }
+
+  .dashboard-main {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .dashboard-main h3 {
+    font-size: 20px;
+  }
+}
