@@ -29,12 +29,12 @@ jobs:
           AI_API_URL: ${{ vars.AI_API_URL || 'https://prjacademiaia.onrender.com' }}
         run: |
           mkdir public
-          cp index.html app.js styles.css manifest.json icon.svg sw.js public/
+          cp index.html app.js styles.css home-layout.css manifest.json icon.svg sw.js public/
           cp -R icons public/icons
+          cp -R assets public/assets
           printf 'window.MEU_TREINO_CONFIG = { AI_API_URL: "%s" };\n' "$AI_API_URL" > public/config.js
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./public
       - id: deployment
         uses: actions/deploy-pages@v4
-
