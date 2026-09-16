@@ -7,6 +7,6 @@
   "theme_color": "#f4f6f8",
   "lang": "pt-BR",
   "icons": [
-    {"src":"icons/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+    {"src":"assets/logo-gymia.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
   ]
 }
