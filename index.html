@@ -3,18 +3,76 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f4f6f8">
+  <meta name="theme-color" content="#f7f9fc">
   <meta name="description" content="Aplicativo pessoal de gerenciamento de treinos">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon.svg">
-  <title>Meu Treino</title>
+  <title>GymIA</title>
   <link rel="stylesheet" href="styles.css?v=51">
   <link rel="stylesheet" href="home-layout.css?v=51">
+  <style>
+    /* GymIA — login visual aprovado, sem frases promocionais */
+    .gymia-auth{min-height:100dvh;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px 18px 32px;background:radial-gradient(circle at 50% 0%,rgba(30,77,140,.10),transparent 38%),#f7f9fc}
+    .gymia-auth__brand{width:min(100%,390px);text-align:center;margin-bottom:18px}
+    .gymia-auth__logo{width:86px;height:86px;margin:0 auto 14px;border-radius:24px;background:#f8fafc url('./icons/icon.svg') center/70px 70px no-repeat;box-shadow:0 12px 28px rgba(10,25,43,.10)}
+    .gymia-auth__name{color:#0a192b;font-size:34px;line-height:1;font-weight:800;letter-spacing:-.05em}
+    .gymia-auth__card{width:min(100%,390px);padding:26px 22px 22px;border:1px solid #e1e7ee;border-radius:24px;background:#fff;box-shadow:0 20px 48px rgba(15,23,42,.11)}
+    .gymia-auth__title{margin:0 0 20px;color:#0a192b;font-size:25px;line-height:1.2;font-weight:800;letter-spacing:-.03em}
+    .gymia-auth__toggle{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin-bottom:20px;border-radius:14px;background:#eef2f6}
+    .gymia-auth__tab{min-height:44px;border-radius:11px;background:transparent;color:#64748b;font-weight:800}
+    .gymia-auth__tab.active{background:#fff;color:#0a192b;box-shadow:0 2px 8px rgba(15,23,42,.06)}
+    .gymia-auth__field{display:block;margin:0 0 15px;color:#334155;font-size:13px;font-weight:700}
+    .gymia-auth__field>span{display:block;margin:0 0 7px}
+    .gymia-auth__field input{width:100%;min-height:52px;box-sizing:border-box;padding:0 15px;border:1px solid #d4dce6;border-radius:14px;background:#fff;color:#0f172a;font-size:16px;outline:none}
+    .gymia-auth__field input:focus{border-color:#1e4d8c;box-shadow:0 0 0 4px rgba(30,77,140,.10)}
+    .gymia-auth__password{position:relative}
+    .gymia-auth__password input{padding-right:52px}
+    .gymia-auth__eye{position:absolute;right:7px;top:50%;width:40px;height:40px;min-width:40px;min-height:40px;transform:translateY(-50%);border-radius:11px;background:transparent;color:#64748b;font-size:16px}
+    .gymia-auth__submit{width:100%;min-height:52px;margin-top:5px;border-radius:14px;background:#0a192b!important;color:#fff!important;font-weight:800;box-shadow:0 9px 20px rgba(10,25,43,.18)}
+    .gymia-auth__link{display:block;margin:11px auto 0;padding:5px 8px;background:transparent;color:#1e4d8c;font-size:13px;font-weight:700}
+    .gymia-auth__link:active{transform:none}
+    @media(max-height:700px){.gymia-auth{padding-top:12px;padding-bottom:18px}.gymia-auth__brand{margin-bottom:10px}.gymia-auth__logo{width:66px;height:66px;background-size:54px 54px;margin-bottom:8px}.gymia-auth__name{font-size:29px}.gymia-auth__card{padding:18px}}
+  </style>
 </head>
 <body>
   <div id="app"></div>
   <!-- Optional local deployment configuration. This file is intentionally not tracked. -->
   <script src="config.js"></script>
   <script src="app.js?v=50"></script>
+  <script>
+    /* Mantém toda a lógica existente e substitui somente a apresentação da autenticação. */
+    window.renderAuthScreen=function(){
+      const app=document.getElementById('app');
+      if(!app)return;
+      const isLogin=window.authMode!=='register';
+      app.innerHTML=`
+        <div class="gymia-auth">
+          <div class="gymia-auth__brand"><div class="gymia-auth__logo" aria-hidden="true"></div><div class="gymia-auth__name">GymIA</div></div>
+          <div class="gymia-auth__card">
+            <h1 class="gymia-auth__title">${isLogin?'Entrar':'Criar conta'}</h1>
+            <div class="gymia-auth__toggle" role="tablist" aria-label="Autenticação">
+              <button type="button" class="gymia-auth__tab ${isLogin?'active':''}" onclick="toggleAuthMode('login')">Entrar</button>
+              <button type="button" class="gymia-auth__tab ${!isLogin?'active':''}" onclick="toggleAuthMode('register')">Criar conta</button>
+            </div>
+            ${isLogin?`
+              <form onsubmit="return handleLoginSubmit(event)">
+                <label class="gymia-auth__field"><span>E-mail</span><input id="auth-email" type="email" placeholder="seu@email.com" autocomplete="email" required></label>
+                <label class="gymia-auth__field"><span>Senha</span><div class="gymia-auth__password"><input id="auth-password" type="password" placeholder="Sua senha" autocomplete="current-password" required><button type="button" class="gymia-auth__eye" onclick="togglePassword('auth-password',this)" aria-label="Mostrar senha">◉</button></div></label>
+                <button class="gymia-auth__submit" type="submit">Entrar</button>
+                <button class="gymia-auth__link" type="button" onclick="alert('A recuperação de senha será disponibilizada em uma próxima etapa.')">Esqueci minha senha</button>
+              </form>
+            `:`
+              <form onsubmit="return handleRegisterSubmit(event)">
+                <label class="gymia-auth__field"><span>Nome</span><input id="register-name" type="text" placeholder="Seu nome" autocomplete="name" required></label>
+                <label class="gymia-auth__field"><span>E-mail</span><input id="register-email" type="email" placeholder="seu@email.com" autocomplete="email" required></label>
+                <label class="gymia-auth__field"><span>Senha</span><div class="gymia-auth__password"><input id="register-password" type="password" placeholder="Mínimo de 6 caracteres" autocomplete="new-password" minlength="6" required><button type="button" class="gymia-auth__eye" onclick="togglePassword('register-password',this)" aria-label="Mostrar senha">◉</button></div></label>
+                <label class="gymia-auth__field"><span>Confirmar senha</span><div class="gymia-auth__password"><input id="register-password-confirm" type="password" placeholder="Repita sua senha" autocomplete="new-password" minlength="6" required><button type="button" class="gymia-auth__eye" onclick="togglePassword('register-password-confirm',this)" aria-label="Mostrar senha">◉</button></div></label>
+                <button class="gymia-auth__submit" type="submit">Criar conta</button>
+              </form>
+            `}
+          </div>
+        </div>`;
+    };
+  </script>
 </body>
 </html>
