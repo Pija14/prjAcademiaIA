@@ -347,23 +347,23 @@
       </div>
 
       <nav class="nav-menu">
-        <a href="#" class="nav-item active" data-section="dashboard">
+        <a href="./index.html" class="nav-item active">
           <span>🏠</span>
           <span>Dashboard</span>
         </a>
-        <a href="#" class="nav-item" data-section="treinos">
+        <a href="./meus-treinos.html" class="nav-item">
           <span>🏋️</span>
           <span>Meus Treinos</span>
         </a>
-        <a href="#" class="nav-item" data-section="criar-treino">
+        <a href="./criar-treino.html" class="nav-item">
           <span>➕</span>
           <span>Novo Treino</span>
         </a>
-        <a href="#" class="nav-item" data-section="perfil">
+        <a href="./perfil.html" class="nav-item">
           <span>👤</span>
           <span>Perfil</span>
         </a>
-        <a href="#" class="nav-item" data-section="ajustes">
+        <a href="./ajustes.html" class="nav-item">
           <span>⚙️</span>
           <span>Ajustes</span>
         </a>
@@ -398,7 +398,7 @@
           <div class="card-icon">🏋️</div>
           <h2 class="card-title">Meus Treinos</h2>
           <p class="card-description">Visualize e acompanhe todos os seus treinos. Veja o histórico e progresso.</p>
-          <a href="#" class="card-action" onclick="navigateTo('treinos'); return false;">Ver Treinos →</a>
+          <a href="./meus-treinos.html" class="card-action">Ver Treinos →</a>
         </div>
 
         <!-- Card 2: Novo Treino -->
@@ -406,7 +406,7 @@
           <div class="card-icon">➕</div>
           <h2 class="card-title">Criar Novo Treino</h2>
           <p class="card-description">Gere um novo plano de treino personalizado com ajuda da IA.</p>
-          <a href="#" class="card-action" onclick="navigateTo('criar-treino'); return false;">Criar →</a>
+          <a href="./criar-treino.html" class="card-action">Criar →</a>
         </div>
 
         <!-- Card 3: Recomendações -->
@@ -414,7 +414,7 @@
           <div class="card-icon">🤖</div>
           <h2 class="card-title">Recomendações IA</h2>
           <p class="card-description">Receba recomendações inteligentes baseadas no seu desempenho.</p>
-          <a href="#" class="card-action" onclick="navigateTo('recomendacoes'); return false;">Ver →</a>
+          <a href="./recomendacoes.html" class="card-action">Ver →</a>
         </div>
 
         <!-- Card 4: Perfil -->
@@ -422,7 +422,7 @@
           <div class="card-icon">👤</div>
           <h2 class="card-title">Meu Perfil</h2>
           <p class="card-description">Gerencies sua conta, dados pessoais e preferências.</p>
-          <a href="#" class="card-action" onclick="navigateTo('perfil'); return false;">Editar →</a>
+          <a href="./perfil.html" class="card-action">Editar →</a>
         </div>
 
         <!-- Card 5: Progresso -->
@@ -430,7 +430,7 @@
           <div class="card-icon">📊</div>
           <h2 class="card-title">Meu Progresso</h2>
           <p class="card-description">Acompanhe seu progresso com gráficos e estatísticas.</p>
-          <a href="#" class="card-action" onclick="navigateTo('progresso'); return false;">Ver Progresso →</a>
+          <a href="./progresso.html" class="card-action">Ver Progresso →</a>
         </div>
 
         <!-- Card 6: Comunidade -->
@@ -438,7 +438,7 @@
           <div class="card-icon">👥</div>
           <h2 class="card-title">Comunidade</h2>
           <p class="card-description">Conecte-se com outros usuários e compartilhe experiências.</p>
-          <a href="#" class="card-action" onclick="navigateTo('comunidade'); return false;">Entrar →</a>
+          <a href="./comunidade.html" class="card-action">Entrar →</a>
         </div>
       </div>
     </main>
@@ -495,27 +495,11 @@
       document.getElementById('sidebarUserEmail').textContent = userEmail;
     }
 
-    function navigateTo(section) {
-      console.log('Navegando para:', section);
-      // Aqui você pode implementar navegação para diferentes seções
-      // Por enquanto, apenas log
-    }
-
     function logout() {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_info');
       window.location.href = './login.html';
     }
-
-    // Menu ativo
-    document.querySelectorAll('.nav-item').forEach(item => {
-      item.addEventListener('click', (e) => {
-        e.preventDefault();
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
-        navigateTo(item.dataset.section);
-      });
-    });
   </script>
 </body>
 </html>
