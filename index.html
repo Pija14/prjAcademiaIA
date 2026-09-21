@@ -176,7 +176,7 @@
 
         if (!token) {
           // Sem token, redirecionar para login
-          window.location.href = '/login.html';
+          window.location.href = './login.html';
           return;
         }
 
@@ -245,7 +245,7 @@
     function logout() {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_info');
-      window.location.href = '/login.html';
+      window.location.href = './login.html';
     }
 
     // Carregar dashboard quando a página abrir

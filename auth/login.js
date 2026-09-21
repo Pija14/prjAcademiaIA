@@ -75,7 +75,7 @@ class LoginPage {
       // Redirecionar
       this.showSuccess("Login realizado com sucesso! Redirecionando...");
       setTimeout(() => {
-        window.location.href = "/index.html";
+        window.location.href = "./index.html";
       }, 1500);
     } catch (error) {
       this.showError(error.message || "Falha no login. Tente novamente.");

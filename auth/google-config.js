@@ -123,7 +123,7 @@ async function validateGoogleToken(token, decodedToken) {
       localStorage.setItem("user_info", JSON.stringify(data.user || decodedToken));
 
       // Redirecionar para a aplicação principal
-      window.location.href = "/index.html";
+      window.location.href = "./index.html";
     }
   } catch (error) {
     console.error("Erro ao validar token do Google:", error);
