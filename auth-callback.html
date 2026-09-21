@@ -69,7 +69,7 @@
         <div class="container">
           <h1>Erro de Autenticação</h1>
           <p>${error}</p>
-          <p><a href="/login.html" style="color: #0052cc; text-decoration: none;">Voltar ao login</a></p>
+          <p><a href="./login.html" style="color: #0052cc; text-decoration: none;">Voltar ao login</a></p>
         </div>
       `;
     } else if (code) {
@@ -84,7 +84,7 @@
           if (data.token) {
             localStorage.setItem("auth_token", data.token);
             localStorage.setItem("user_info", JSON.stringify(data.user));
-            window.location.href = "/index.html";
+            window.location.href = "./index.html";
           } else {
             throw new Error(data.message || "Erro desconhecido");
           }
@@ -95,13 +95,13 @@
             <div class="container">
               <h1>Erro</h1>
               <p>${err.message}</p>
-              <p><a href="/login.html" style="color: #0052cc; text-decoration: none;">Voltar ao login</a></p>
+              <p><a href="./login.html" style="color: #0052cc; text-decoration: none;">Voltar ao login</a></p>
             </div>
           `;
         });
     } else {
       // Sem código nem erro, redirecionar
-      window.location.href = "/login.html";
+      window.location.href = "./login.html";
     }
   </script>
 </body>

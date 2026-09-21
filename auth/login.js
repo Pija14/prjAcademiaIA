@@ -33,7 +33,7 @@ class LoginPage {
 
     // Redirecionar se já está autenticado
     if (window.authManager?.isLoggedIn()) {
-      window.location.href = "/index.html";
+      window.location.href = "./index.html";
     }
 
     // Inicializar Google Sign-In
@@ -154,7 +154,7 @@ class LoginPage {
           await window.authManager.loginWithGoogle(response.credential);
           this.showSuccess("Login com Google realizado com sucesso!");
           setTimeout(() => {
-            window.location.href = "/index.html";
+            window.location.href = "./index.html";
           }, 1500);
         } catch (error) {
           this.showError(error.message || "Falha na autenticação com Google");
