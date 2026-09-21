@@ -1,13 +1,41 @@
-# Local frontend secrets must not be committed. config.js contains only the
-# public backend URL and is intentionally versioned for GitHub Pages.
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
 
-# Backend secrets and virtual environments
-ai-backend/.env
-ai-backend/.venv/
-ai-backend/__pycache__/
-__pycache__/
+# Environment variables
+.env
+.env.local
+.env.*.local
 
-# Editor and OS files
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
-Thumbs.db
 
+# Build output
+dist/
+build/
+*.min.js
+*.min.css
+
+# Cache
+.cache/
+*.tmp
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# Temporary
+temp/
+tmp/

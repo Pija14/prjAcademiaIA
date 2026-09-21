@@ -1,286 +1,266 @@
-## v50 — Login, autenticação por API e isolamento multiusuário
+# 💪 GymIA - Seu Assistente de Treino com IA
 
-- Login e cadastro redesenhados com interface mobile-first.
-- Autenticação migrada para a API FastAPI com token JWT.
-- Senhas armazenadas no backend somente como hash scrypt.
-- Criado armazenamento persistente por usuário no banco (`users` + `user_states`).
-- Novo usuário começa sem treinos, histórico, calendário ou dados privados de outro usuário.
-- Estado de aplicação carregado e salvo pela API autenticada.
-- Backend valida a identidade pelo token e nunca aceita `userId` do frontend como autoridade.
-- IA agora exige autenticação antes de gerar planos.
-- LocalStorage permanece apenas como cache/estado local e não é mecanismo de autorização.
-- Migração legada segura: dados locais só são migrados quando o e-mail autenticado corresponde a uma conta local existente; novos e-mails recebem estado vazio.
-- Exportação/importação passou a operar somente sobre o estado do usuário, sem incluir contas de outros usuários.
-- Estrutura preparada para PostgreSQL em produção e SQLite para desenvolvimento local.
+**GymIA** é uma aplicação web progressiva (PWA) que oferece um assistente de treino inteligente, nutrição e análise de desempenho alimentados por IA.
 
-### Configuração do backend v50
+## 🌟 Features
 
-Configure no Render (ou outro provedor FastAPI):
+- ✅ **Autenticação Segura** - Email/senha e Google OAuth
+- ✅ **Gerenciamento de Treinos** - Crie, edite e acompanhe seus treinos
+- ✅ **Biblioteca de Exercícios** - Acesso a centenas de exercícios catalogados
+- ✅ **Assistente IA** - Recomendações personalizadas de treino
+- ✅ **PWA Offline-First** - Funciona offline com sincronização automática
+- ✅ **Análise de Dados** - Gráficos e estatísticas de progresso
+- ✅ **Responsivo** - Funciona em desktop, tablet e mobile
 
-- `DATABASE_URL`: URL do PostgreSQL de produção.
-- `JWT_SECRET`: segredo aleatório com pelo menos 32 caracteres.
-- `ACCESS_TOKEN_MINUTES`: duração do token, padrão 60.
-- `OPENAI_API_KEY`: chave da IA, somente no backend.
-- `OPENAI_MODEL`: modelo utilizado pela IA.
-- `ALLOWED_ORIGINS`: origem exata do GitHub Pages.
+## 📱 Branches
 
-O banco de produção deve ser PostgreSQL. O arquivo `render.yaml` deixa `DATABASE_URL` e `JWT_SECRET` como variáveis secretas para serem configuradas no serviço.
+### `master`
+- Versão estável e em produção
+- Integrado e testado
 
-### Arquitetura
+### `feature/auth-login` ⭐ (Atual)
+- **Novo**: Sistema de autenticação completo
+- Login com email/senha
+- Google OAuth 2.0 integration
+- Gerenciamento de sessão
+- Documentação completa
 
-`PWA → API FastAPI → autenticação/autorização → PostgreSQL`
+## 🚀 Quick Start
 
-A API identifica o usuário pelo token e associa o estado persistente ao `user_id`. O frontend não escolhe o proprietário dos dados.
+### Pré-requisitos
+- Node.js 14+
+- npm ou yarn
+- Google Cloud Console account (para OAuth)
 
+### Instalação
 
-## v49 — Ajustes de navegação, calendário, IA e cards
+```bash
+# Clone o repositório
+git clone https://github.com/pija14/prjAcademiaIA.git
+cd prjAcademiaIA
 
-- Removido o subtítulo visual "Meu Treino" abaixo de "CONTROLE DE TREINO".
-- Ajustado o calendário para conter nomes longos de treino dentro das células.
-- Refinado o botão "Planejar com IA" com ícone SVG local e hierarquia visual consistente.
-- Removida a marca d'água dos cards de Treinos e reduzido o destaque tipográfico do nome.
-- Removida a etiqueta textual "TREINO CONCLUÍDO" dos detalhes.
-- Reorganizada a data na listagem de treinos realizados, integrada ao conjunto de metadados do card.
+# Checkout da branch de autenticação
+git checkout feature/auth-login
 
-## v48 — Backend de IA com OpenAI
-
-- Backend configurado para usar OpenAI como provedor padrão.
-- `OPENAI_API_KEY` configurada como variável secreta no deploy.
-- Modelo padrão configurado como `gpt-5.6-luna`.
-- `.env` local não é incluído no pacote; use `.env.example` para configuração.
-
-## v47 — Botão de exclusão dos treinos
-
-- Botão de exclusão dos cards de treino reduzido visualmente.
-- Símbolo “×” desenhado diretamente por CSS, sem depender do SVG.
-- Mantida a função de exclusão e o handler existente.
-- Área de toque e foco visível preservados.
-- Cache e query strings atualizados para v47.
-
-## v45 — Meta semanal e refinamento das configurações
-
-- Removida a região visual de Preferências da tela de Configurações.
-- Adicionada Meta semanal de 1 a 7 dias de treino por semana.
-- Meta semanal persistida no armazenamento local e aplicada ao resumo da tela inicial.
-- Alterados os títulos para “Duração”, “Exercício” e “Descanso”.
-- Cache e query strings atualizados para v45.
-
-## v44 — Repetições bloqueadas e carga editável
-
-- Campo de repetições/séries bloqueado na execução do exercício.
-- Campo de carga (Kg) permanece editável.
-- Estilo visual diferencia campo bloqueado de campo editável.
-- Cache e query strings atualizados para v44.
-
-## v43 — Correção da edição de carga (Kg)
-
-- Corrigido o bloqueio de interação dos inputs de séries e carga na tela de execução.
-- Campos de reps e Kg agora recebem foco e aceitam edição normalmente.
-- Corrigida a largura dos inputs para ocupar corretamente suas colunas.
-- Mantido teclado numérico e comportamento existente.
-- Cache atualizado para v43.
-
-## v42 — Configurações de tempo e campos de execução
-
-- Campos de séries, repetições e carga padronizados para edição confortável no celular.
-- Campo de carga/Kg com foco e área de toque adequados.
-- Adicionadas configurações manuais para duração do exercício e descanso.
-- Tempos configurados são persistidos no armazenamento local e utilizados pelos cronômetros.
-- Mantidos os padrões de 60 segundos para exercício e 30 segundos para descanso quando não houver configuração anterior.
-- Removida a região visual Dados da tela de Configurações.
-
-## v41 — Refinamento da tela inicial e edição
-
-- Unificação da meta semanal no card de Resumo.
-- Unificação do indicador Último Treino com o card de treino recente.
-- Calendário ajustado para nomes longos sem extrapolar as células.
-- Botão de exclusão dos cards de treino destacado no canto superior direito.
-- Campos Nome, Descrição e Nível da edição de treino com padrão visual arredondado e confortável para toque.
-# Meu Treino — PWA
-
-Versão 2 corrigida do aplicativo pessoal de treinos A/B/C.
-
-## Correção principal
-- Iniciar/Pausar do cronômetro individual funciona sem perder o tempo acumulado.
-- Iniciar novamente continua de onde parou.
-- Troca de exercício salva o tempo anterior.
-- Cronômetro geral permanece independente.
-- Cronômetro de descanso é separado.
-
-
-## Correção v3
-Corrigida a tela de execução para preservar as séries e repetições prescritas ao iniciar o treino. O texto "[object Object] × repetições" não deve mais aparecer; exercícios com prescrição exibem, por exemplo, "4 × 12/12/8/8", enquanto exercícios sem prescrição exibem "Séries não informadas".
-
-
-## Versão v4 — exclusão de exercícios
-- Cada exercício pode ser excluído individualmente na tela do Treino A, B ou C.
-- A exclusão fica salva no aparelho e permanece após fechar o aplicativo.
-- Exercícios excluídos não entram no treino nem no contador de exercícios.
-- É possível restaurar todos os exercícios excluídos de um treino.
-
-
-## Versão v5 — personalização da ficha
-- Restaurar exercícios individualmente.
-- Restaurar todos os exercícios excluídos.
-- Adicionar exercícios manualmente a qualquer treino A/B/C.
-- Exercícios personalizados ficam salvos no aparelho.
-- Ao adicionar, informar nome, grupo muscular, séries e repetições/tempo.
-- Exercícios personalizados entram automaticamente na execução do treino.
-
-
-## Versão v6 — formulário de exercício
-- Substituído o prompt do navegador por uma tela nativa do aplicativo.
-- Campos para nome, grupo muscular, séries e repetições/tempo.
-- Validação do nome.
-- Seleção do grupo muscular baseada no treino.
-- Cancelamento sem salvar.
-
-## Versão v27 — múltiplos treinos e histórico automático
-- Meus Treinos com quantidade ilimitada de treinos.
-- Treino Básico migrado e preservado; Treino B e Treino C também são preservados.
-- Hierarquia: treino → grupo muscular → exercício → séries.
-- Criação, edição, duplicação, ativação/desativação e organização de treinos.
-- Grupos musculares e exercícios organizáveis por treino.
-- Carga e repetições independentes por série.
-- Validação somente da série que será iniciada.
-- Cronômetro fixo de 60s + descanso automático de 30s, com som e vibração.
-- Próxima série iniciada somente manualmente.
-- Conclusão automática de exercício e treino.
-- Histórico de treinos concluídos.
-- Calendário marcado automaticamente e detalhes por dia.
-- Service Worker/cache atualizado para v27.
-
-
-## v29 - UX/UI Tela de Treinos
-- Cards com cores suaves por nível: Básico azul, Intermediário verde, Avançado amarelo e Personalizado avermelhado.
-- Botão `+ Treino`.
-- Remoção do título duplicado da área de treinos na tela inicial.
-- Exclusão lógica protegida por confirmação, sem apagar histórico.
-- Ícone de lixeira separado do clique do card via `stopPropagation`.
-- Padronização visual de nomes de treinos, grupos e exercícios.
-- Cache do Service Worker atualizado para v29.
-
-
-## v30 - UX/UI Tela de Edição de Treino
-- Removido o botão + da barra superior somente da tela de edição.
-- Removido o nível ao lado do nome do treino e o texto de migração da interface.
-- Adicionado botão de voltar para Treinos.
-- Padronizado o campo Nome.
-- Renomeado Grupos Musculares e adicionado botão + somente com ícone.
-- Removida a ação Duplicar treino da tela de edição.
-- Salvar Treino retorna para a tela de Treinos após salvar.
-- Ajustados os textos Adicionar Exercício e Salvar Treino.
-- Cache do Service Worker atualizado para v30.
-
-
-## v31 — Ajustes na tela de execução
-- Botão de série centralizado.
-- Check de série concluída centralizado e não interativo.
-- Textos corrigidos para "Série em Execução", "Iniciar Próxima Série" e "Iniciar Série".
-- Removido o texto "30s entre séries" da interface, mantendo o descanso automático de 30 segundos.
-
-## v32 — UX/UI Tela Inicial
-- Removido o banner superior com o raio da tela inicial.
-- Indicadores reposicionados imediatamente após o cabeçalho.
-- `Ver todos` substituído por botão `+` na seção Treinos disponíveis.
-- `+` abre uma tela nativa de cadastro de novo treino.
-- Cards com `×` vermelho no canto superior direito para exclusão.
-- `▶` Iniciar posicionado no canto inferior esquerdo.
-- `✎` Editar posicionado no canto inferior direito.
-- Mantida a confirmação de exclusão e o histórico dos treinos.
-- Layout responsivo para telas pequenas.
-- Cache do Service Worker atualizado para v32.
-
-## v34 — Cards sem indicador de nível
-- Cards da tela inicial e da tela Treinos alinhados ao design visual de referência.
-- Ícone de musculação em bloco azul claro.
-- Título e quantidade de exercícios com hierarquia visual maior.
-- Nível apresentado como pill quando disponível.
-- Marca d'água decorativa construída em SVG/CSS, sem uso da imagem de referência.
-- Exclusão com `×` vermelho no canto superior direito.
-- `Iniciar` como CTA principal no canto inferior esquerdo.
-- `Editar` como ação secundária no canto inferior direito.
-- Renderização dos cards centralizada em `f2WorkoutCard()` para evitar duplicação.
-- Responsividade refinada para 320px, 350px, 480px e telas maiores.
-- Cache do Service Worker atualizado para v33.
-
-
-### v34
-- Removido apenas da apresentação dos cards o indicador visual de nível/dificuldade.
-- Mantidos os dados `level` dos treinos e todas as demais funcionalidades.
-- Ações ancoradas: Iniciar inferior esquerdo, Editar inferior direito e X superior direito.
-
-
-## v36 — Campo Nome padronizado
-- Campo Nome da tela de edição/novo treino padronizado visualmente com os demais campos do formulário.
-- Mantidos dados, navegação e demais funcionalidades.
-
-## v38 — Restauração do módulo "Meus Treinos"
-
-Ao adicionar a tela de login, o bloco da Fase 2 foi perdido do `app.js`: cerca de 44 funções eram chamadas mas não existiam mais, o que derrubava a navegação inferior.
-
-- Restaurado o módulo completo de múltiplos treinos (grupos, exercícios, reordenação, duplicação, exclusão lógica e migração automática de A/B/C).
-- Restaurados os helpers de execução (`currentExercise`, `exerciseSetCount`, `stopIntervals`, `updateTimers`, `beep`, `confirmExitWorkout`) e o calendário (`calDate`, `changeMonth`).
-- `Treinos` e `Calendário` voltaram a abrir; `Histórico` deixou de quebrar quando há treinos registrados.
-- Tela de Configurações reescrita, agora com dados da conta e sair.
-- `renderWorkout` não referencia mais a variável inexistente `last`, e o rótulo do treino mostra o nome em vez do id.
-- `finishWorkout` compara a chave certa ao detectar execução duplicada.
-- `DEFAULTS` passa a declarar `myWorkouts` e `workoutHistory`.
-- Removido o listener `DOMContentLoaded` duplicado e a definição duplicada de `exerciseReadyForStart`.
-- `clearData` limpa apenas histórico e execuções, sem descartar os treinos cadastrados.
-- Definido `setPlanEnabled` e adicionado o campo Nome que a tela legada A/B/C esperava.
-- Estilos adicionados para `.f2-actions`, `.groups-title-row`, `.group-add-btn` e `.new-workout-form`.
-- Cache do Service Worker atualizado para v38.
-
-## Planejamento com IA e GitHub Pages
-
-O recurso opcional **Planejar com IA** cria uma sugestão de ficha e só a salva após confirmação. A ficha resultante usa a mesma estrutura dos treinos manuais e funciona offline; somente a geração exige internet.
-
-### Publicação
-
-1. Publique esta pasta como a raiz de um repositório GitHub e envie para `main`.
-2. Em **Settings → Pages**, escolha **GitHub Actions**. O workflow `.github/workflows/deploy-pages.yml` publica somente os arquivos estáticos da PWA.
-3. O arquivo `config.js` contém somente a URL pública do backend e pode ser publicado no GitHub Pages. Nunca inclua chaves de API nele.
-4. Como alternativa, a variável de repositório `AI_API_URL` em **Settings → Secrets and variables → Actions → Variables** substitui a URL durante o workflow.
-5. Para desenvolvimento local, ajuste `config.js` ou use `config.example.js` com outro backend HTTPS:
-
-```js
-window.MEU_TREINO_CONFIG = {
-  AI_API_URL: "https://seu-backend.exemplo.com"
-};
+# Instale as dependências do backend
+npm install
 ```
 
-Sem `config.js`, todos os treinos continuam funcionando e apenas a função de IA fica desativada. O arquivo nunca deve conter uma chave de API.
+### Configuração
 
-### Backend de IA
+1. **Google OAuth Setup**
+   - Veja [AUTH_SETUP.md](./AUTH_SETUP.md) para instruções completas
+   - Obtenha seu Client ID do Google Cloud Console
+   - Atualize `auth/google-config.js`
 
-GitHub Pages não executa Python ou Node. Hospede `ai-backend` separadamente em um provedor compatível com FastAPI (como Render ou Google Cloud Run).
+2. **Variáveis de Ambiente**
+   ```bash
+   cp .env.example .env
+   # Edite .env com suas configurações
+   ```
 
-1. Para usar OpenAI, configure no provedor: `AI_PROVIDER=openai`, `OPENAI_API_KEY` e, opcionalmente, `OPENAI_MODEL=gpt-5.6-luna`. A chave deve ficar somente no ambiente do backend.
-2. Em `ALLOWED_ORIGINS`, informe a origem real do GitHub Pages, como `https://usuario.github.io`. Não use `*` em produção.
-3. Para executar localmente: em `ai-backend`, crie um ambiente virtual, instale `pip install -r requirements.txt` e execute `uvicorn app.main:app --host 0.0.0.0 --port 8000`.
+3. **Iniciar Aplicação**
+   ```bash
+   # Backend
+   npm start
 
-Nunca envie `.env`, `config.js` ou chaves para o GitHub. O backend inclui validação, timeout e um limite simples de requisições; use também o rate limiting do provedor para produção.
+   # Frontend acessível em
+   http://localhost:3000
+   ```
 
-## v40 — Ajustes de navegação e cards
+## 📁 Estrutura do Projeto
 
-- Ícones SVG do menu inferior centralizados vertical e horizontalmente, com áreas de toque uniformes.
-- Botão de exclusão dos cards de treino fixado no canto superior direito, com alvo de toque mínimo de 44px e sem interferir na ação do card.
-- Cache do Service Worker e versões dos arquivos `styles.css`/`app.js` atualizados para v40.
+```
+prjAcademiaIA/
+├── 📄 index.html              # App principal
+├── 📄 login.html              # Página de login
+├── 📄 auth-callback.html      # Callback OAuth
+├── 📂 styles/
+│   ├── styles.css             # Estilos gerais
+│   └── login.css              # Estilos de login
+├── 📂 auth/
+│   ├── google-config.js       # Config Google OAuth
+│   ├── auth-manager.js        # Gerenciador de auth
+│   └── login.js               # Lógica de login
+├── 📂 icons/
+│   └── icon.svg               # Logo do app
+├── app.js                      # Lógica principal
+├── config.js                   # Configurações
+├── sw.js                       # Service Worker
+├── manifest.json               # PWA manifest
+├── AUTH_SETUP.md              # 🆕 Guia de autenticação
+└── README.md                   # Este arquivo
+```
 
-## v39 — Redesign visual e sistema de design
-- Reescrita completa do `styles.css` em camadas: tokens, reset, tipografia, layout, componentes, telas e responsividade.
-- Consolidada a identidade visual em tokens de cor, espaçamento, tipografia, raio e elevação.
-- Padronizados cards, listas, formulários, botões, pills, badges, estados vazios e controles do editor.
-- Melhorada a leitura da tela de execução com estados visuais `idle`, `running` e `resting` no card principal.
-- Botão de série em execução/descanso passou a ter estados visuais distintos sem alterar a lógica dos cronômetros.
-- Ícones de navegação e ações substituídos por SVG inline local, mantendo handlers existentes.
-- Adicionado foco visível, alvos de toque mínimos, campos de formulário com 16px e suporte a `prefers-reduced-motion`.
-- Adicionado tema escuro por tokens via `prefers-color-scheme: dark` e `color-scheme: light dark`.
-- Removidos estilos CSS legados sem uso das versões anteriores.
-- Mantida a fonte de sistema; nenhuma fonte, CDN ou recurso externo foi adicionado.
-- Cache do Service Worker e versões dos arquivos `styles.css`/`app.js` atualizados para v39.
+## 🔐 Autenticação
 
-### Observação técnica
-- `renderDashboard()` continua presente no `app.js`, mas não é chamado pela navegação atual. Ele foi preservado e não recebeu investimento de redesign, conforme a tarefa.
+### Fluxo de Login Local
+```
+Usuario Entra Credenciais → Valida Cliente → Envia para Backend → 
+Verifica BD → Gera JWT → Retorna Token → Salva LocalStorage → 
+Redireciona para App
+```
 
+### Fluxo Google OAuth
+```
+Click "Login com Google" → Carrega SDK Google → Abre Prompt → 
+Autentica com Google → Retorna JWT → Envia para Backend → 
+Cria/Atualiza Usuario → Retorna Token App → Salva LocalStorage → 
+Redireciona para App
+```
+
+**Para mais detalhes**: Veja [AUTH_SETUP.md](./AUTH_SETUP.md)
+
+## 🛠️ Tecnologias
+
+### Frontend
+- **HTML5** - Estrutura
+- **CSS3** - Estilo (com animações e modo escuro)
+- **Vanilla JavaScript** - Interatividade
+- **PWA API** - Service Workers, Manifest, IndexedDB
+- **Google Sign-In** - OAuth 2.0
+
+### Backend (Exemplo Node.js)
+- **Express.js** - Framework web
+- **JWT** - Autenticação
+- **MongoDB/PostgreSQL** - Banco de dados
+- **Google Auth Library** - Validação de tokens
+
+## 📚 Documentação
+
+- [Guia de Autenticação](./AUTH_SETUP.md) - Setup completo de OAuth e login
+- [API Reference](#api-reference) - Endpoints disponíveis
+- [Troubleshooting](#troubleshooting) - Soluções para problemas comuns
+
+## 🔗 API Reference
+
+### Autenticação
+
+#### POST `/api/auth/login`
+Login com email e senha
+```json
+{
+  "email": "usuario@email.com",
+  "password": "senha123"
+}
+```
+
+#### POST `/api/auth/google`
+Login com Google OAuth
+```json
+{
+  "token": "eyJhbGciOiJSUzI1NiIs...",
+  "userInfo": { "email": "...", "name": "...", ... }
+}
+```
+
+#### POST `/api/auth/register`
+Criar nova conta
+```json
+{
+  "email": "novo@email.com",
+  "password": "senha123",
+  "name": "João Silva"
+}
+```
+
+Veja `AUTH_SETUP.md` para mais endpoints e exemplos de resposta.
+
+## ⚙️ Configuração de Produção
+
+### Deploy na Vercel/Netlify (Frontend)
+```bash
+# Conecte seu repositório
+# Variáveis de ambiente:
+REACT_APP_API_URL=https://api.seu-dominio.com
+REACT_APP_GOOGLE_CLIENT_ID=seu-client-id.apps.googleusercontent.com
+```
+
+### Deploy no Render/Heroku (Backend)
+```bash
+# Crie uma nova aplicação
+# Configure variáveis:
+JWT_SECRET=sua-chave-secreta
+GOOGLE_CLIENT_ID=seu-client-id
+GOOGLE_CLIENT_SECRET=seu-secret
+DATABASE_URL=seu-banco-dados
+```
+
+## 🔒 Segurança
+
+- ✅ Tokens JWT com expiração
+- ✅ Validação de email no backend
+- ✅ Hash de senhas (bcrypt)
+- ✅ HTTPS obrigatório em produção
+- ✅ CORS configurado
+- ✅ Proteção contra XSS e CSRF
+
+**Boas práticas**: Veja seção "Segurança" em [AUTH_SETUP.md](./AUTH_SETUP.md)
+
+## 🐛 Troubleshooting
+
+### "Google SDK não carregado"
+```
+→ Verifique conexão de internet
+→ Desabilite bloqueador de anúncios
+→ Verifique console do navegador (F12)
+```
+
+### "Token expirado"
+```
+→ Implemente refresh token flow
+→ Redirecione para login quando expirar
+```
+
+### Erro CORS
+```
+→ Verifique CORS_ORIGIN no backend
+→ Adicione seu domínio aos headers
+```
+
+Mais soluções em [AUTH_SETUP.md](./AUTH_SETUP.md#troubleshooting)
+
+## 🤝 Contribuindo
+
+1. Crie uma nova branch (`git checkout -b feature/sua-feature`)
+2. Commit suas mudanças (`git commit -am 'Add nova feature'`)
+3. Push para a branch (`git push origin feature/sua-feature`)
+4. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
+
+## 👥 Autores
+
+- **Seu Nome** - Developer/Maintainer
+- GitHub: [@pija14](https://github.com/pija14)
+
+## 📞 Suporte
+
+- 📧 Email: suporte@gymia.com
+- 🐛 Issues: [GitHub Issues](https://github.com/pija14/prjAcademiaIA/issues)
+- 💬 Discussões: [GitHub Discussions](https://github.com/pija14/prjAcademiaIA/discussions)
+
+## 🗺️ Roadmap
+
+### Q4 2024
+- [x] Sistema de autenticação
+- [ ] Interface de treinos
+- [ ] Biblioteca de exercícios
+
+### Q1 2025
+- [ ] Integração com IA (recomendações)
+- [ ] Análise de dados e gráficos
+- [ ] Modo offline melhorado
+
+### Q2 2025
+- [ ] App nativo iOS/Android
+- [ ] Integração com wearables
+- [ ] Comunidade e compartilhamento
+
+---
+
+**Última atualização**: 2026-09-21
+
+⭐ Se gostou, deixe uma star! ⭐

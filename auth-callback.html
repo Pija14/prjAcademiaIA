@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Autenticação com Google</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #e8f0f8 0%, #f4f6f8 50%, #e3eef9 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      text-align: center;
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 26, 77, 0.1);
+      max-width: 400px;
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #e3eef9;
+      border-top-color: #0052cc;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #001a4d;
+      margin-bottom: 10px;
+    }
+    p {
+      color: #7a8799;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="spinner"></div>
+    <h1>Autenticando...</h1>
+    <p>Processando sua autenticação com Google. Por favor, aguarde.</p>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="auth/auth-manager.js"></script>
+  <script>
+    // Extrair parâmetros da URL
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const state = params.get("state");
+    const error = params.get("error");
+
+    if (error) {
+      console.error("Erro de autenticação:", error);
+      document.body.innerHTML = `
+        <div class="container">
+          <h1>Erro de Autenticação</h1>
+          <p>${error}</p>
+          <p><a href="/login.html" style="color: #0052cc; text-decoration: none;">Voltar ao login</a></p>
+        </div>
+      `;
+    } else if (code) {
+      // Enviar código para o backend
+      fetch(`${window.MEU_TREINO_CONFIG?.AI_API_URL || "https://prjacademiaia.onrender.com"}/api/auth/google/callback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, state })
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.token) {
+            localStorage.setItem("auth_token", data.token);
+            localStorage.setItem("user_info", JSON.stringify(data.user));
+            window.location.href = "/index.html";
+          } else {
+            throw new Error(data.message || "Erro desconhecido");
+          }
+        })
+        .catch((err) => {
+          console.error("Erro:", err);
+          document.body.innerHTML = `
+            <div class="container">
+              <h1>Erro</h1>
+              <p>${err.message}</p>
+              <p><a href="/login.html" style="color: #0052cc; text-decoration: none;">Voltar ao login</a></p>
+            </div>
+          `;
+        });
+    } else {
+      // Sem código nem erro, redirecionar
+      window.location.href = "/login.html";
+    }
+  </script>
+</body>
+</html>
