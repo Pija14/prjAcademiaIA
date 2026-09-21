@@ -1,14 +1,18 @@
 /**
  * Configuração do GymIA
- * Detecta automaticamente se está em desenvolvimento ou produção
+ * Detecta automaticamente o ambiente (desenvolvimento/produção)
  */
 
-// Determinar URL da API baseado no ambiente
-let API_URL = "https://prjacademiaia.onrender.com"; // Produção (Render)
+let API_URL = "https://gymia-backend.onrender.com"; // Produção - Backend no Render
 
 // Se em localhost, usar backend local
 if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-  API_URL = "http://localhost:3001"; // Desenvolvimento
+  API_URL = "http://localhost:3001"; // Desenvolvimento - Backend local
+}
+
+// Se em GitHub Pages, usar backend do Render
+if (window.location.hostname.includes("github.io")) {
+  API_URL = "https://gymia-backend.onrender.com"; // Produção - GitHub Pages
 }
 
 window.MEU_TREINO_CONFIG = {
@@ -20,5 +24,6 @@ window.MEU_TREINO_CONFIG = {
 // Log de configuração (apenas em desenvolvimento)
 if (window.MEU_TREINO_CONFIG.DEBUG) {
   console.log("🔧 Configuração do GymIA:", window.MEU_TREINO_CONFIG);
+  console.log("API URL:", API_URL);
 }
 
