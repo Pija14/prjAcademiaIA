@@ -1,0 +1,546 @@
+/* =========================================================
+   ESTILOS DE LOGIN - GymIA
+   ========================================================= */
+
+:root {
+  --color-primary: #0052cc;
+  --color-primary-dark: #001a4d;
+  --color-primary-light: #e3eef9;
+  --color-bg: #f4f6f8;
+  --color-border: #d0d7e0;
+  --color-text: #2c3e50;
+  --color-text-light: #7a8799;
+  --color-white: #ffffff;
+  --color-error: #d32f2f;
+  --color-success: #388e3c;
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 3rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.5rem;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body.login-page {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: linear-gradient(135deg, #e8f0f8 0%, #f4f6f8 50%, #e3eef9 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text);
+}
+
+/* Decorative background shapes */
+body.login-page::before,
+body.login-page::after {
+  content: "";
+  position: fixed;
+  border-radius: 50%;
+  opacity: 0.08;
+  z-index: -1;
+}
+
+body.login-page::before {
+  width: 500px;
+  height: 500px;
+  background: linear-gradient(135deg, #0052cc, #001a4d);
+  top: -200px;
+  right: -100px;
+}
+
+body.login-page::after {
+  width: 400px;
+  height: 400px;
+  background: linear-gradient(135deg, #0052cc, #001a4d);
+  bottom: -150px;
+  left: -100px;
+}
+
+.login-container {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--spacing-lg);
+  margin: 0 auto;
+}
+
+/* Logo Header */
+.login-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+  animation: fadeInDown 0.6s ease-out;
+}
+
+.gymia-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.gymia-logo svg {
+  width: 100px;
+  height: 100px;
+  filter: drop-shadow(0 4px 12px rgba(0, 26, 77, 0.15));
+}
+
+.gymia-logo h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #001a4d 0%, #0052cc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -1px;
+}
+
+/* Login Card */
+.login-card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 40px rgba(0, 26, 77, 0.1);
+  overflow: hidden;
+  animation: fadeInUp 0.6s ease-out 0.2s both;
+}
+
+.login-content {
+  padding: var(--spacing-lg) var(--spacing-lg);
+}
+
+@media (min-width: 480px) {
+  .login-content {
+    padding: var(--spacing-xl);
+  }
+}
+
+.login-label {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--color-text-light);
+  text-transform: uppercase;
+}
+
+.login-title {
+  margin: 0 0 var(--spacing-xs) 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.3;
+}
+
+.login-subtitle {
+  margin: 0 0 var(--spacing-lg) 0;
+  font-size: 0.95rem;
+  color: var(--color-text-light);
+  line-height: 1.5;
+}
+
+/* Form Styles */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.form-group {
+  position: relative;
+}
+
+.form-input {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 1rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  color: var(--color-text);
+  transition: var(--transition);
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.form-input::placeholder {
+  color: transparent;
+}
+
+.form-label {
+  position: absolute;
+  left: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-light);
+  pointer-events: none;
+  transition: var(--transition);
+  background: transparent;
+  padding: 0 var(--spacing-xs);
+}
+
+.form-input:focus ~ .form-label,
+.form-input:not(:placeholder-shown) ~ .form-label {
+  top: -0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  background: var(--color-white);
+  padding: 0 var(--spacing-xs);
+}
+
+/* Password Toggle Button */
+.password-toggle {
+  position: absolute;
+  right: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--color-text-light);
+  transition: var(--transition);
+  padding: 0;
+}
+
+.password-toggle:hover {
+  color: var(--color-primary);
+}
+
+.eye-icon {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+/* Buttons */
+.btn-login,
+.btn-google {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #0052cc, #001a4d);
+  color: var(--color-white);
+  box-shadow: 0 4px 12px rgba(0, 82, 204, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 82, 204, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Google Button */
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  background: var(--color-white);
+  color: var(--color-text);
+  border: 1.5px solid var(--color-border);
+  margin-top: var(--spacing-md);
+}
+
+.btn-google:hover {
+  background: #f8f9fa;
+  border-color: #999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.google-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Login Links */
+.login-links {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--spacing-md);
+}
+
+.link-forgot-password {
+  font-size: 0.875rem;
+  color: var(--color-text-light);
+  text-decoration: none;
+  transition: var(--transition);
+  font-weight: 500;
+}
+
+.link-forgot-password:hover {
+  color: var(--color-primary);
+}
+
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin: var(--spacing-md) 0;
+  color: var(--color-text-light);
+  font-size: 0.875rem;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+/* Sign Up Link */
+.login-signup {
+  margin: var(--spacing-lg) 0 0 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+.link-signup {
+  color: var(--color-primary-dark);
+  text-decoration: none;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.link-signup:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+/* Error Message */
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: #ffebee;
+  border: 1px solid #ef5350;
+  border-radius: var(--radius-md);
+  color: var(--color-error);
+  font-size: 0.875rem;
+  margin-bottom: var(--spacing-md);
+  animation: slideDown 0.3s ease-out;
+}
+
+.form-error.hidden {
+  display: none;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--color-primary-light);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Animations */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .login-container {
+    padding: var(--spacing-md);
+  }
+
+  .gymia-logo svg {
+    width: 80px;
+    height: 80px;
+  }
+
+  .gymia-logo h1 {
+    font-size: 2rem;
+  }
+
+  .login-card {
+    margin-top: var(--spacing-lg);
+  }
+
+  .login-title {
+    font-size: 1.5rem;
+  }
+
+  body.login-page::before {
+    width: 350px;
+    height: 350px;
+    top: -100px;
+    right: -150px;
+  }
+
+  body.login-page::after {
+    width: 300px;
+    height: 300px;
+    bottom: -100px;
+    left: -150px;
+  }
+}
+
+@media (max-width: 320px) {
+  .login-content {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+
+  .btn-login,
+  .btn-google {
+    padding: var(--spacing-md);
+    font-size: 0.95rem;
+  }
+
+  .login-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  body.login-page {
+    background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0a0e18 100%);
+  }
+
+  .login-card {
+    background: #1e2633;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  .form-input {
+    background: #2a3240;
+    border-color: #3a4250;
+    color: var(--color-white);
+  }
+
+  .form-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.2);
+  }
+
+  .form-label {
+    color: #a0aac0;
+  }
+
+  .form-input:focus ~ .form-label,
+  .form-input:not(:placeholder-shown) ~ .form-label {
+    background: #1e2633;
+    color: var(--color-primary);
+  }
+
+  .btn-google {
+    background: #2a3240;
+    border-color: #3a4250;
+    color: var(--color-white);
+  }
+
+  .btn-google:hover {
+    background: #303a4a;
+    border-color: #4a5a6a;
+  }
+
+  .login-title,
+  .login-signup {
+    color: var(--color-white);
+  }
+
+  .login-label,
+  .login-subtitle,
+  .link-forgot-password {
+    color: #a0aac0;
+  }
+}
