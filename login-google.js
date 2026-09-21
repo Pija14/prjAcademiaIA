@@ -139,6 +139,34 @@
       </div>`;
   }
 
+  function isLoginScreenRendered() {
+    return !!document.querySelector(".auth-google-screen");
+  }
+
+  function isOriginalLoginScreen() {
+    const app = document.getElementById("app");
+    if (!app || isLoginScreenRendered()) return false;
+    const password = app.querySelector('input[type="password"]');
+    const email = app.querySelector('input[type="email"]');
+    return !!(password && email);
+  }
+
+  function installInitialScreenHook() {
+    // app.js is loaded before this file and may already have rendered the login.
+    // Observe #app so the login is replaced even when the original screen has
+    // a different CSS class/name than expected.
+    const app = document.getElementById("app");
+    if (!app) return;
+
+    const replaceIfLogin = () => {
+      if (isOriginalLoginScreen()) renderGoogleLoginScreen();
+    };
+
+    replaceIfLogin();
+    const observer = new MutationObserver(replaceIfLogin);
+    observer.observe(app, { childList: true, subtree: true });
+  }
+
   window.startGoogleLogin = startGoogleLogin;
   window.handleGoogleCredential = handleGoogleCredential;
 
@@ -146,15 +174,16 @@
 
   window.toggleAuthMode = function (mode) {
     if (mode === "login") {
-      originalToggleAuthMode("login");
+      if (typeof originalToggleAuthMode === "function") originalToggleAuthMode("login");
       renderGoogleLoginScreen();
       return;
     }
-    originalToggleAuthMode(mode);
+    if (typeof originalToggleAuthMode === "function") originalToggleAuthMode(mode);
   };
 
-  // bootApp() já pode ter renderizado a tela antes deste arquivo ser carregado.
-  if (document.querySelector(".auth-shell") && !document.querySelector(".auth-google-screen")) {
-    renderGoogleLoginScreen();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", installInitialScreenHook, { once: true });
+  } else {
+    installInitialScreenHook();
   }
 })();
