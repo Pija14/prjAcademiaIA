@@ -88,21 +88,12 @@ body.login-page::after {
   gap: var(--spacing-md);
 }
 
+.gymia-logo img,
 .gymia-logo svg {
-  width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
   filter: drop-shadow(0 4px 12px rgba(0, 26, 77, 0.15));
-}
-
-.gymia-logo h1 {
-  margin: 0;
-  font-size: 2.5rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #001a4d 0%, #0052cc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: -1px;
+  object-fit: contain;
 }
 
 /* Login Card */
