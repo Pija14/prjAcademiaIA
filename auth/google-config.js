@@ -4,8 +4,8 @@
 
 // Configurações do Google OAuth
 const GOOGLE_CONFIG = {
-  // Substitua com seu Client ID do Google Cloud Console
-  CLIENT_ID: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+  // Client ID do Google Cloud Console
+  CLIENT_ID: "8099264097-7ubvcmh5roaka5humfl5ugm0l7afd9p5.apps.googleusercontent.com",
 
   // Scope de permissões solicitadas
   SCOPES: [
