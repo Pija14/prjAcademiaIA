@@ -3,65 +3,68 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f4f7fb">
-  <meta name="description" content="Meu Treino - Dashboard">
+  <meta name="theme-color" content="#f4f6f8">
+  <meta name="description" content="GymIA - Seu assistente de treino com IA">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon.svg">
-  <title>Meu Treino - Dashboard</title>
+  <title>GymIA - Dashboard</title>
   <link rel="stylesheet" href="styles.css?v=53">
   <link rel="stylesheet" href="styles/meu-treino-design-system.css?v=53">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    :root { --primary-blue:#667eea; --secondary-blue:#764ba2; --dark-blue:#1a1a3e; --light-bg:#f4f6f8; --white:#fff; --text-dark:#1a1a1a; --text-muted:#7a8799; --border-color:#e8ecf1; }
+    body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell',sans-serif; background:linear-gradient(135deg,#e8f0f8 0%,#f4f6f8 50%,#e3eef9 100%); min-height:100vh; color:var(--text-dark); }
+    .layout{display:flex;min-height:100vh}.sidebar{width:280px;background:var(--white);border-right:1px solid var(--border-color);padding:30px 20px;display:flex;flex-direction:column;box-shadow:2px 0 10px rgba(0,0,0,.05)}
+    .logo-section{display:flex;align-items:center;gap:12px;margin-bottom:40px;padding-bottom:30px;border-bottom:1px solid var(--border-color)}.logo-section svg{width:40px;height:40px}.logo-text{font-size:18px;font-weight:700}.logo-text .gym{background:linear-gradient(135deg,var(--primary-blue),var(--secondary-blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.logo-text .ia{color:var(--secondary-blue)}
+    .nav-menu{flex:1}.nav-item{display:flex;align-items:center;gap:12px;padding:12px 16px;margin-bottom:8px;border-radius:8px;cursor:pointer;text-decoration:none;color:var(--text-muted);transition:all .3s ease;font-size:14px;font-weight:500}.nav-item:hover{background:#f5f7fa;color:var(--primary-blue);transform:translateX(4px)}.nav-item.active{background:linear-gradient(135deg,rgba(102,126,234,.1),rgba(118,75,162,.1));color:var(--primary-blue)}.nav-item svg{width:20px;height:20px}
+    .user-info-section{padding-top:30px;border-top:1px solid var(--border-color)}.user-card{background:linear-gradient(135deg,rgba(102,126,234,.05),rgba(118,75,162,.05));border-radius:12px;padding:12px;margin-bottom:12px;text-align:center}.user-name{font-size:13px;font-weight:600;color:var(--text-dark);margin-bottom:4px}.user-email{font-size:12px;color:var(--text-muted)}
+    .main-content{flex:1;padding:40px;display:flex;flex-direction:column}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:40px}.header-info{flex:1}.greeting{font-size:24px;font-weight:700;color:var(--text-dark);margin-bottom:8px}.subtitle{font-size:14px;color:var(--text-muted)}.logout-btn{background:linear-gradient(135deg,var(--primary-blue),var(--secondary-blue));color:var(--white);border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:all .3s ease}.logout-btn:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(102,126,234,.3)}
+    .cards-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;flex:1}.card{background:var(--white);border-radius:16px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,.08);transition:all .3s ease;cursor:pointer;border:2px solid transparent}.card:hover{transform:translateY(-4px);box-shadow:0 12px 35px rgba(102,126,234,.15);border-color:var(--primary-blue)}.card-icon{font-size:48px;margin-bottom:16px}.card-title{font-size:18px;font-weight:700;color:var(--text-dark);margin-bottom:8px}.card-description{font-size:14px;color:var(--text-muted);margin-bottom:16px;line-height:1.5}.card-action{display:inline-block;color:var(--primary-blue);text-decoration:none;font-weight:600;font-size:14px;transition:all .3s ease}.card-action:hover{gap:4px;color:var(--secondary-blue)}
+    @media(max-width:768px){.layout{flex-direction:column}.sidebar{width:100%;border-right:none;border-bottom:1px solid var(--border-color);padding:20px;flex-direction:row;align-items:center;justify-content:space-between}.logo-section{margin-bottom:0;padding-bottom:0;border-bottom:none}.nav-menu{display:none}.user-info-section{display:none}.main-content{padding:20px}.header{flex-direction:column;align-items:flex-start;gap:16px}.cards-container{grid-template-columns:1fr}}
+    .loading{display:flex;justify-content:center;align-items:center;height:200px}.spinner{width:40px;height:40px;border:4px solid var(--border-color);border-top-color:var(--primary-blue);border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.error-message{background:#fee;color:#c00;padding:16px;border-radius:8px;border-left:4px solid #c00;margin-bottom:16px}
+  </style>
 </head>
 <body>
   <div class="layout">
     <aside class="sidebar">
       <div class="logo-section">
-        <div class="logo-text"><span class="gym">Meu</span><span class="ia"> Treino</span></div>
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#667eea;stop-opacity:1"/><stop offset="100%" style="stop-color:#764ba2;stop-opacity:1"/></linearGradient></defs><circle cx="100" cy="100" r="95" fill="url(#grad1)" opacity=".1" stroke="url(#grad1)" stroke-width="2"/><text x="100" y="120" font-size="60" font-weight="bold" text-anchor="middle" fill="url(#grad1)">💪</text></svg>
+        <div class="logo-text"><span class="gym">Gym</span><span class="ia">IA</span></div>
       </div>
       <nav class="nav-menu">
-        <a href="./index.html" class="nav-item active"><span></span><span>Início</span></a>
-        <a href="./meus-treinos.html" class="nav-item"><span></span><span>Meus Treinos</span></a>
-        <a href="./criar-treino.html" class="nav-item"><span></span><span>Novo Treino</span></a>
-        <a href="./perfil.html" class="nav-item"><span></span><span>Perfil</span></a>
-        <a href="./ajustes.html" class="nav-item"><span></span><span>Ajustes</span></a>
+        <a href="./index.html" class="nav-item active"><span>🏠</span><span>Dashboard</span></a>
+        <a href="./meus-treinos.html" class="nav-item"><span>🏋️</span><span>Meus Treinos</span></a>
+        <a href="./criar-treino.html" class="nav-item"><span>➕</span><span>Novo Treino</span></a>
+        <a href="./perfil.html" class="nav-item"><span>👤</span><span>Perfil</span></a>
+        <a href="./ajustes.html" class="nav-item"><span>⚙️</span><span>Ajustes</span></a>
       </nav>
       <div class="user-info-section">
         <div class="user-card"><div class="user-name" id="sidebarUserName">Carregando...</div><div class="user-email" id="sidebarUserEmail">email@exemplo.com</div></div>
-        <button class="logout-btn" onclick="logout()" style="width:100%">Sair</button>
+        <button class="logout-btn" onclick="logout()" style="width:100%;">🚪 Sair</button>
       </div>
     </aside>
     <main class="main-content">
-      <div class="header">
-        <div class="header-info"><h1 class="greeting" id="greeting">Bem-vindo!</h1><p class="subtitle">Organize seus treinos e acompanhe sua evolução.</p></div>
-        <button class="logout-btn" onclick="logout">Sair</button>
-      </div>
+      <div class="header"><div class="header-info"><h1 class="greeting" id="greeting">Bem-vindo ao GymIA!</h1><p class="subtitle">Seu assistente de treino inteligente com IA</p></div><button class="logout-btn" onclick="logout()">🚪 Sair</button></div>
       <div class="cards-container">
-        <div class="card"><div class="card-icon"></div><h2 class="card-title">Meus Treinos</h2><p class="card-description">Visualize e acompanhe todos os seus treinos, histórico e progresso.</p><a href="./meus-treinos.html" class="card-action">Ver treinos <i class="fa-solid fa-chevron-right" aria-hidden="true"></i></a></div>
-        <div class="card"><div class="card-icon"></div><h2 class="card-title">Criar Novo Treino</h2><p class="card-description">Crie um novo plano de treino personalizado.</p><a href="./criar-treino.html" class="card-action">Criar <i class="fa-solid fa-chevron-right" aria-hidden="true"></i></a></div>
-        <div class="card"><div class="card-icon"></div><h2 class="card-title">Recomendações IA</h2><p class="card-description">Receba recomendações inteligentes baseadas no seu desempenho.</p><a href="./recomendacoes.html" class="card-action">Ver recomendações <i class="fa-solid fa-chevron-right" aria-hidden="true"></i></a></div>
-        <div class="card"><div class="card-icon"></div><h2 class="card-title">Meu Perfil</h2><p class="card-description">Gerencie seus dados pessoais e preferências.</p><a href="./perfil.html" class="card-action">Editar <i class="fa-solid fa-chevron-right" aria-hidden="true"></i></a></div>
-        <div class="card"><div class="card-icon"></div><h2 class="card-title">Meu Progresso</h2><p class="card-description">Acompanhe seu progresso com gráficos e estatísticas.</p><a href="./progresso.html" class="card-action">Ver progresso <i class="fa-solid fa-chevron-right" aria-hidden="true"></i></a></div>
-        <div class="card"><div class="card-icon"></div><h2 class="card-title">Comunidade</h2><p class="card-description">Conecte-se com outros usuários e compartilhe experiências.</p><a href="./comunidade.html" class="card-action">Entrar <i class="fa-solid fa-chevron-right" aria-hidden="true"></i></a></div>
+        <div class="card"><div class="card-icon">🏋️</div><h2 class="card-title">Meus Treinos</h2><p class="card-description">Visualize e acompanhe todos os seus treinos. Veja o histórico e progresso.</p><a href="./meus-treinos.html" class="card-action">Ver Treinos →</a></div>
+        <div class="card"><div class="card-icon">➕</div><h2 class="card-title">Criar Novo Treino</h2><p class="card-description">Gere um novo plano de treino personalizado com ajuda da IA.</p><a href="./criar-treino.html" class="card-action">Criar →</a></div>
+        <div class="card"><div class="card-icon">🤖</div><h2 class="card-title">Recomendações IA</h2><p class="card-description">Receba recomendações inteligentes baseadas no seu desempenho.</p><a href="./recomendacoes.html" class="card-action">Ver →</a></div>
+        <div class="card"><div class="card-icon">👤</div><h2 class="card-title">Meu Perfil</h2><p class="card-description">Gerencies sua conta, dados pessoais e preferências.</p><a href="./perfil.html" class="card-action">Editar →</a></div>
+        <div class="card"><div class="card-icon">📊</div><h2 class="card-title">Meu Progresso</h2><p class="card-description">Acompanhe seu progresso com gráficos e estatísticas.</p><a href="./progresso.html" class="card-action">Ver Progresso →</a></div>
+        <div class="card"><div class="card-icon">👥</div><h2 class="card-title">Comunidade</h2><p class="card-description">Conecte-se com outros usuários e compartilhe experiências.</p><a href="./comunidade.html" class="card-action">Entrar →</a></div>
       </div>
     </main>
   </div>
-  <script src="config.js"></script>
-  <script src="auth/auth-manager.js"></script>
-  <script src="treino-manager.js"></script>
-  <script src="seed-treinos.js"></script>
+  <script src="config.js"></script><script src="auth/auth-manager.js"></script><script src="treino-manager.js"></script><script src="seed-treinos.js"></script>
   <script>
     window.addEventListener('load', initializePage);
     async function initializePage(){
-      const token=localStorage.getItem('auth_token');
-      const userInfo=localStorage.getItem('user_info');
+      const token=localStorage.getItem('auth_token');const userInfo=localStorage.getItem('user_info');
       if(!token){window.location.href='./login.html';return;}
-      try{
-        const user=userInfo?JSON.parse(userInfo):null;
-        const name=user?.name||user?.nome||user?.email?.split('@')[0]||'Usuário';
-        document.getElementById('sidebarUserName').textContent=name;
-        document.getElementById('sidebarUserEmail').textContent=user?.email||'';
-        document.getElementById('greeting').textContent=`Olá, ${name}`;
-      }catch(e){console.error(e)}
+      try{const user=userInfo?JSON.parse(userInfo):null;if(user){updateUserInfo(user)}const apiUrl=window.MEU_TREINO_CONFIG?.AI_API_URL||'https://prjacademiaia.onrender.com';const response=await fetch(`${apiUrl}/api/user/profile`,{method:'GET',headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'}});if(response.ok){const data=await response.json();updateUserInfo(data.user)}}catch(error){console.error('Erro ao carregar dados:',error)}
     }
+    function updateUserInfo(user){const userName=user?.name||'Usuário';const userEmail=user?.email||'email@exemplo.com';document.getElementById('greeting').textContent=`Bem-vindo, ${userName}! 👋`;document.getElementById('sidebarUserName').textContent=userName;document.getElementById('sidebarUserEmail').textContent=userEmail}
+    function logout(){localStorage.removeItem('auth_token');localStorage.removeItem('user_info');window.location.href='./login.html'}
   </script>
 </body>
 </html>
