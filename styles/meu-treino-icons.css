@@ -1,0 +1,11 @@
+:root{--mt-icon-size:20px;--mt-icon-stroke:1.9}
+.mt-icon{width:var(--mt-icon-size);height:var(--mt-icon-size);display:inline-flex;align-items:center;justify-content:center;flex:0 0 var(--mt-icon-size);color:currentColor}
+.mt-icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:var(--mt-icon-stroke);stroke-linecap:round;stroke-linejoin:round}
+.icon-box{width:40px;height:40px;border-radius:12px;background:var(--mt-primary-soft);color:var(--mt-primary);display:inline-flex;align-items:center;justify-content:center}
+.icon-box .mt-icon{--mt-icon-size:21px}
+.nav-item .mt-icon{--mt-icon-size:20px}
+.card-icon .mt-icon{--mt-icon-size:24px}
+.card-icon{width:48px;height:48px;border-radius:14px;background:var(--mt-primary-soft);color:var(--mt-primary);display:flex;align-items:center;justify-content:center;font-size:0;margin-bottom:16px}
+.card-action{display:inline-flex;align-items:center;gap:7px}
+.card-action .mt-icon{--mt-icon-size:16px}
+.btn-icon{width:40px;height:40px;padding:0!important;display:inline-flex;align-items:center;justify-content:center;border-radius:12px}
