@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Criar Treino - GymIA</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary-blue: #667eea;
+      --secondary-blue: #764ba2;
+      --light-bg: #f4f6f8;
+      --white: #ffffff;
+      --text-dark: #1a1a1a;
+      --text-muted: #7a8799;
+      --border-color: #e8ecf1;
+      --success: #51cf66;
+      --danger: #ff6b6b;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #e8f0f8 0%, #f4f6f8 50%, #e3eef9 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: var(--text-dark);
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Form */
+    .form-container {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-dark);
+      font-size: 14px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary-blue);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    /* Exercícios */
+    .exercicios-section {
+      margin-bottom: 30px;
+      padding-top: 30px;
+      border-top: 2px solid var(--border-color);
+    }
+
+    .exercicios-section h2 {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+
+    .exercicio-item {
+      background: #f9fafb;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .exercicio-nome {
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .exercicio-detalhes {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .btn-remover-exercicio {
+      background: #ffe6e6;
+      color: var(--danger);
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .btn-remover-exercicio:hover {
+      background: var(--danger);
+      color: var(--white);
+    }
+
+    .btn-adicionar-exercicio {
+      background: #e6f0ff;
+      color: var(--primary-blue);
+      border: 2px dashed var(--primary-blue);
+      padding: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      width: 100%;
+      transition: all 0.3s ease;
+    }
+
+    .btn-adicionar-exercicio:hover {
+      background: var(--primary-blue);
+      color: var(--white);
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 30px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .modal-close {
+      float: right;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    /* Buttons */
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 30px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+      color: var(--white);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: var(--text-dark);
+    }
+
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1 id="pageTitle">➕ Novo Treino</h1>
+      <p id="pageSubtitle">Crie um plano de treino personalizado</p>
+    </div>
+
+    <!-- Form -->
+    <form class="form-container" id="treinoForm" onsubmit="salvarTreino(event)">
+      <!-- Básico -->
+      <div class="form-group">
+        <label for="titulo">Título do Treino *</label>
+        <input type="text" id="titulo" name="titulo" required placeholder="Ex: Treino A - Peito e Tríceps">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="tipo">Tipo de Treino *</label>
+          <select id="tipo" name="tipo" required>
+            <option value="">Selecione...</option>
+            <option value="A">Treino A</option>
+            <option value="B">Treino B</option>
+            <option value="C">Treino C</option>
+            <option value="D">Treino D</option>
+            <option value="personalizado">Personalizado</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="intensidade">Intensidade *</label>
+          <select id="intensidade" name="intensidade" required>
+            <option value="media">Média</option>
+            <option value="baixa">Baixa</option>
+            <option value="alta">Alta</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="duracao">Duração (minutos) *</label>
+          <input type="number" id="duracao" name="duracao" value="60" min="15" max="180" required>
+        </div>
+
+        <div class="form-group">
+          <label for="data">Data do Treino</label>
+          <input type="date" id="data" name="data">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="descricao">Descrição</label>
+        <textarea id="descricao" name="descricao" placeholder="Descreva o foco deste treino..."></textarea>
+      </div>
+
+      <!-- Exercícios -->
+      <div class="exercicios-section">
+        <h2>💪 Exercícios</h2>
+        <div id="exerciciosList"></div>
+        <button type="button" class="btn-adicionar-exercicio" onclick="abrirModalExercicio()">
+          ➕ Adicionar Exercício
+        </button>
+      </div>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" onclick="voltar()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">💾 Salvar Treino</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Modal Exercício -->
+  <div class="modal" id="modalExercicio">
+    <div class="modal-content">
+      <button class="modal-close" onclick="fecharModalExercicio()">&times;</button>
+      <div class="modal-header">Adicionar Exercício</div>
+
+      <div class="form-group">
+        <label for="exercicioNome">Nome do Exercício *</label>
+        <input type="text" id="exercicioNome" placeholder="Ex: Supino">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="exercicioSeries">Séries *</label>
+          <input type="number" id="exercicioSeries" value="3" min="1" max="10">
+        </div>
+
+        <div class="form-group">
+          <label for="exercicioRepeticoes">Repetições *</label>
+          <input type="number" id="exercicioRepeticoes" value="10" min="1" max="50">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="exercicioDescanso">Descanso (seg)</label>
+          <input type="number" id="exercicioDescanso" value="60" min="15" max="300">
+        </div>
+
+        <div class="form-group">
+          <label for="exercicioPeso">Peso (kg)</label>
+          <input type="number" id="exercicioPeso" step="0.5" placeholder="Opcional">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="exercicioNotas">Notas</label>
+        <textarea id="exercicioNotas" placeholder="Anotações sobre o exercício..."></textarea>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="fecharModalExercicio()">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-primary" style="flex: 1;" onclick="adicionarExercicio()">
+          Adicionar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="treino-manager.js"></script>
+  <script>
+    let exercicios = [];
+    let treinoId = null;
+
+    // Inicializar
+    window.addEventListener('load', inicializar);
+
+    async function inicializar() {
+      const params = new URLSearchParams(window.location.search);
+      treinoId = params.get('id');
+
+      if (treinoId) {
+        // Modo edição
+        document.getElementById('pageTitle').textContent = '✏️ Editar Treino';
+        document.getElementById('pageSubtitle').textContent = 'Atualize os detalhes do treino';
+
+        const treino = await window.treinoManager.getTreinoById(parseInt(treinoId));
+        if (treino) {
+          document.getElementById('titulo').value = treino.titulo;
+          document.getElementById('tipo').value = treino.tipo;
+          document.getElementById('intensidade').value = treino.intensidade;
+          document.getElementById('duracao').value = treino.duracao;
+          document.getElementById('descricao').value = treino.descricao || '';
+
+          if (treino.data) {
+            const data = new Date(treino.data);
+            document.getElementById('data').value = data.toISOString().split('T')[0];
+          }
+
+          exercicios = treino.exercicios || [];
+          atualizarListaExercicios();
+        }
+      } else {
+        // Definir data de hoje
+        const hoje = new Date().toISOString().split('T')[0];
+        document.getElementById('data').value = hoje;
+      }
+    }
+
+    async function salvarTreino(event) {
+      event.preventDefault();
+
+      const dados = {
+        titulo: document.getElementById('titulo').value,
+        tipo: document.getElementById('tipo').value,
+        intensidade: document.getElementById('intensidade').value,
+        duracao: parseInt(document.getElementById('duracao').value),
+        descricao: document.getElementById('descricao').value,
+        exercicios: exercicios
+      };
+
+      try {
+        if (treinoId) {
+          await window.treinoManager.atualizarTreino(parseInt(treinoId), dados);
+          alert('Treino atualizado com sucesso!');
+        } else {
+          await window.treinoManager.criarTreino(dados);
+          alert('Treino criado com sucesso!');
+        }
+
+        window.location.href = './meus-treinos.html';
+      } catch (error) {
+        alert('Erro ao salvar treino: ' + error.message);
+      }
+    }
+
+    function abrirModalExercicio() {
+      document.getElementById('modalExercicio').classList.add('active');
+    }
+
+    function fecharModalExercicio() {
+      document.getElementById('modalExercicio').classList.remove('active');
+      // Limpar campos
+      document.getElementById('exercicioNome').value = '';
+      document.getElementById('exercicioSeries').value = '3';
+      document.getElementById('exercicioRepeticoes').value = '10';
+      document.getElementById('exercicioDescanso').value = '60';
+      document.getElementById('exercicioPeso').value = '';
+      document.getElementById('exercicioNotas').value = '';
+    }
+
+    function adicionarExercicio() {
+      const nome = document.getElementById('exercicioNome').value.trim();
+      if (!nome) {
+        alert('Informe o nome do exercício');
+        return;
+      }
+
+      const exercicio = {
+        id: Date.now(),
+        nome: nome,
+        series: parseInt(document.getElementById('exercicioSeries').value),
+        repeticoes: parseInt(document.getElementById('exercicioRepeticoes').value),
+        descanso: parseInt(document.getElementById('exercicioDescanso').value),
+        peso: document.getElementById('exercicioPeso').value ? parseFloat(document.getElementById('exercicioPeso').value) : null,
+        notas: document.getElementById('exercicioNotas').value
+      };
+
+      exercicios.push(exercicio);
+      atualizarListaExercicios();
+      fecharModalExercicio();
+    }
+
+    function atualizarListaExercicios() {
+      const lista = document.getElementById('exerciciosList');
+      lista.innerHTML = '';
+
+      exercicios.forEach(ex => {
+        const item = document.createElement('div');
+        item.className = 'exercicio-item';
+        item.innerHTML = `
+          <div>
+            <div class="exercicio-nome">${ex.nome}</div>
+            <div class="exercicio-detalhes">
+              ${ex.series}x${ex.repeticoes} | Descanso: ${ex.descanso}s ${ex.peso ? `| ${ex.peso}kg` : ''}
+            </div>
+          </div>
+          <button type="button" class="btn-remover-exercicio" onclick="removerExercicio(${ex.id})">
+            Remover
+          </button>
+        `;
+        lista.appendChild(item);
+      });
+    }
+
+    function removerExercicio(id) {
+      exercicios = exercicios.filter(ex => ex.id !== id);
+      atualizarListaExercicios();
+    }
+
+    function voltar() {
+      window.location.href = './meus-treinos.html';
+    }
+  </script>
+</body>
+</html>

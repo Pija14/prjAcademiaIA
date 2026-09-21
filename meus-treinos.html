@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Meus Treinos - GymIA</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary-blue: #667eea;
+      --secondary-blue: #764ba2;
+      --light-bg: #f4f6f8;
+      --white: #ffffff;
+      --text-dark: #1a1a1a;
+      --text-muted: #7a8799;
+      --border-color: #e8ecf1;
+      --danger: #ff6b6b;
+      --success: #51cf66;
+      --warning: #ffd93d;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #e8f0f8 0%, #f4f6f8 50%, #e3eef9 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: var(--text-dark);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .header-content h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .header-content p {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .btn-novo {
+      background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+      color: var(--white);
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-novo:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    /* Filtros */
+    .filtros {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .filtro-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .filtro-grupo label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .filtro-grupo select {
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    /* Lista de Treinos */
+    .treinos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 24px;
+    }
+
+    .treino-card {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+      border-left: 4px solid var(--primary-blue);
+    }
+
+    .treino-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.15);
+    }
+
+    .treino-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 16px;
+    }
+
+    .treino-titulo {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-tipo {
+      background: rgba(102, 126, 234, 0.1);
+      color: var(--primary-blue);
+    }
+
+    .badge-intensidade-baixa {
+      background: rgba(81, 207, 102, 0.1);
+      color: var(--success);
+    }
+
+    .badge-intensidade-media {
+      background: rgba(255, 217, 61, 0.1);
+      color: var(--warning);
+    }
+
+    .badge-intensidade-alta {
+      background: rgba(255, 107, 107, 0.1);
+      color: var(--danger);
+    }
+
+    .treino-descricao {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .treino-info {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .exercicios-count {
+      background: rgba(102, 126, 234, 0.05);
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: var(--text-dark);
+    }
+
+    .treino-acoes {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-small {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .btn-editar {
+      background: var(--primary-blue);
+      color: var(--white);
+    }
+
+    .btn-editar:hover {
+      background: #5568d3;
+    }
+
+    .btn-deletar {
+      background: #f0f0f0;
+      color: var(--danger);
+    }
+
+    .btn-deletar:hover {
+      background: #ffe6e6;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .empty-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+
+    .empty-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .empty-text {
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .back-btn {
+      background: var(--white);
+      color: var(--primary-blue);
+      border: 2px solid var(--primary-blue);
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .back-btn:hover {
+      background: var(--primary-blue);
+      color: var(--white);
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--border-color);
+      border-top-color: var(--primary-blue);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .btn-novo {
+        width: 100%;
+        text-align: center;
+      }
+
+      .treinos-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .filtros {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-content">
+        <h1>🏋️ Meus Treinos</h1>
+        <p>Gerencie e acompanhe todos os seus treinos</p>
+      </div>
+      <a href="./criar-treino.html" class="btn-novo">➕ Novo Treino</a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filtros">
+      <div class="filtro-grupo">
+        <label>Tipo de Treino</label>
+        <select id="filtroTipo" onchange="aplicarFiltros()">
+          <option value="">Todos</option>
+          <option value="A">Treino A</option>
+          <option value="B">Treino B</option>
+          <option value="C">Treino C</option>
+          <option value="D">Treino D</option>
+          <option value="personalizado">Personalizado</option>
+        </select>
+      </div>
+
+      <div class="filtro-grupo">
+        <label>Intensidade</label>
+        <select id="filtroIntensidade" onchange="aplicarFiltros()">
+          <option value="">Todas</option>
+          <option value="baixa">Baixa</option>
+          <option value="media">Média</option>
+          <option value="alta">Alta</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Lista de Treinos -->
+    <div id="treinosContainer" class="loading">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="treino-manager.js"></script>
+  <script>
+    // Carregar treinos ao abrir
+    window.addEventListener('load', carregarTreinos);
+
+    async function carregarTreinos() {
+      try {
+        const container = document.getElementById('treinosContainer');
+
+        const treinos = await window.treinoManager.getTreinos();
+
+        if (treinos.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">🏋️</div>
+              <h2 class="empty-title">Nenhum treino cadastrado</h2>
+              <p class="empty-text">Comece agora criando seu primeiro plano de treino personalizado</p>
+              <a href="./criar-treino.html" class="btn-novo">➕ Criar Primeiro Treino</a>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = `<div class="treinos-grid" id="treinosList"></div>`;
+        const lista = document.getElementById('treinosList');
+
+        treinos.forEach(treino => {
+          const card = criarCardTreino(treino);
+          lista.appendChild(card);
+        });
+      } catch (error) {
+        console.error('Erro ao carregar treinos:', error);
+        document.getElementById('treinosContainer').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">❌</div>
+            <h2 class="empty-title">Erro ao carregar treinos</h2>
+            <p class="empty-text">${error.message}</p>
+            <button class="back-btn" onclick="location.href='./index.html'">Voltar</button>
+          </div>
+        `;
+      }
+    }
+
+    function criarCardTreino(treino) {
+      const card = document.createElement('div');
+      card.className = 'treino-card';
+
+      const intensidades = { baixa: '🟢', media: '🟡', alta: '🔴' };
+      const badgeClass = `badge-intensidade-${treino.intensidade || 'media'}`;
+
+      card.innerHTML = `
+        <div class="treino-header">
+          <div>
+            <div class="treino-titulo">${treino.titulo}</div>
+            <span class="badge badge-tipo">Tipo ${treino.tipo || 'A'}</span>
+          </div>
+          <span class="badge ${badgeClass}">
+            ${intensidades[treino.intensidade || 'media']} ${treino.intensidade || 'Média'}
+          </span>
+        </div>
+
+        ${treino.descricao ? `<p class="treino-descricao">${treino.descricao}</p>` : ''}
+
+        <div class="treino-info">
+          <div class="info-item">📅 ${window.treinoManager.formatarData(treino.data)}</div>
+          <div class="info-item">⏱️ ${treino.duracao || 0} min</div>
+        </div>
+
+        ${treino.exercicios?.length ? `
+          <div class="exercicios-count">
+            💪 ${treino.exercicios.length} exercício(s)
+          </div>
+        ` : ''}
+
+        <div class="treino-acoes">
+          <button class="btn-small btn-editar" onclick="editarTreino(${treino.id})">✏️ Editar</button>
+          <button class="btn-small btn-deletar" onclick="deletarTreino(${treino.id})">🗑️ Deletar</button>
+        </div>
+      `;
+
+      return card;
+    }
+
+    async function aplicarFiltros() {
+      const tipo = document.getElementById('filtroTipo').value;
+      const intensidade = document.getElementById('filtroIntensidade').value;
+
+      const filtro = {};
+      if (tipo) filtro.tipo = tipo;
+      if (intensidade) filtro.intensidade = intensidade;
+
+      try {
+        const container = document.getElementById('treinosContainer');
+        const treinos = await window.treinoManager.getTreinos(filtro);
+
+        if (treinos.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">🔍</div>
+              <h2 class="empty-title">Nenhum resultado</h2>
+              <p class="empty-text">Nenhum treino corresponde aos filtros selecionados</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = `<div class="treinos-grid" id="treinosList"></div>`;
+        const lista = document.getElementById('treinosList');
+
+        treinos.forEach(treino => {
+          const card = criarCardTreino(treino);
+          lista.appendChild(card);
+        });
+      } catch (error) {
+        console.error('Erro ao aplicar filtros:', error);
+      }
+    }
+
+    function editarTreino(id) {
+      window.location.href = `./criar-treino.html?id=${id}`;
+    }
+
+    async function deletarTreino(id) {
+      if (!confirm('Tem certeza que deseja deletar este treino?')) return;
+
+      try {
+        await window.treinoManager.deletarTreino(id);
+        alert('Treino deletado com sucesso!');
+        carregarTreinos();
+      } catch (error) {
+        alert('Erro ao deletar treino: ' + error.message);
+      }
+    }
+  </script>
+</body>
+</html>
