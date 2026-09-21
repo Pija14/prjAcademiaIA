@@ -335,4 +335,20 @@ Para problemas:
 
 ---
 
+## ✨ GitHub Actions - Deploy Automático
+
+Este projeto usa **GitHub Actions** para deploy automático no Render!
+
+Cada push para `main` dispara automaticamente:
+1. ✅ Detecta mudanças
+2. ✅ Faz deploy no Render
+3. ✅ Notifica resultado
+
+Para configurar, veja [.github/DEPLOY_SETUP.md](../.github/DEPLOY_SETUP.md)
+
+---
+
 **Última atualização**: 2026-09-21
+
+> **Test push**: GitHub Actions ativado! Deploy automático em produção.
+> Esta linha foi adicionada para testar o workflow de CI/CD.
