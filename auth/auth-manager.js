@@ -8,7 +8,7 @@ class AuthManager {
     this.token = null;
     this.isAuthenticated = false;
     this.apiUrl = window.MEU_TREINO_CONFIG?.AI_API_URL ||
-                  "https://gymia-backend.onrender.com";
+                  "https://prjacademiaia.onrender.com";
     this.loadStoredSession();
   }
 

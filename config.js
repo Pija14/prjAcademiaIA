@@ -3,7 +3,7 @@
  * Detecta automaticamente o ambiente (desenvolvimento/produção)
  */
 
-let API_URL = "https://gymia-backend.onrender.com"; // Produção - Backend no Render
+let API_URL = "https://prjacademiaia.onrender.com"; // Produção - Backend no Render
 
 // Se em localhost, usar backend local
 if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
@@ -12,7 +12,7 @@ if (window.location.hostname === "localhost" || window.location.hostname === "12
 
 // Se em GitHub Pages, usar backend do Render
 if (window.location.hostname.includes("github.io")) {
-  API_URL = "https://gymia-backend.onrender.com"; // Produção - Render
+  API_URL = "https://prjacademiaia.onrender.com"; // Produção - Render
 }
 
 window.MEU_TREINO_CONFIG = {
