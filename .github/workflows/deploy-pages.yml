@@ -2,7 +2,7 @@ name: Deploy Meu Treino to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, login-google-ui-2026-09-21]
   workflow_dispatch:
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -25,11 +25,11 @@ jobs:
       - uses: actions/configure-pages@v5
       - name: Prepare static frontend
         env:
-          # The repository variable can override this deployed default later.
           AI_API_URL: ${{ vars.AI_API_URL || 'https://prjacademiaia.onrender.com' }}
         run: |
           mkdir public
           cp index.html app.js styles.css manifest.json icon.svg sw.js public/
+          cp login-google.js login-google.css login-google-config.js public/
           cp -R icons public/icons
           printf 'window.MEU_TREINO_CONFIG = { AI_API_URL: "%s" };\n' "$AI_API_URL" > public/config.js
       - uses: actions/upload-pages-artifact@v3
@@ -37,4 +37,3 @@ jobs:
           path: ./public
       - id: deployment
         uses: actions/deploy-pages@v4
-
