@@ -5,3 +5,4 @@ python-dotenv>=1,<2
 PyJWT>=2.9,<3
 SQLAlchemy>=2,<3
 psycopg[binary]>=3,<4
+google-auth>=2.40,<3
