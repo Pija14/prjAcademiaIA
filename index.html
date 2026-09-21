@@ -5,23 +5,251 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4f6f8">
   <meta name="description" content="GymIA - Seu assistente de treino com IA">
-  <meta http-equiv="refresh" content="0;url=login.html">
-  <link rel="canonical" href="login.html">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon.svg">
-  <title>GymIA - Redirecionando...</title>
-  <link rel="stylesheet" href="styles.css?v=50">
+  <title>GymIA - Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 600px;
+      width: 100%;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 30px;
+      object-fit: contain;
+    }
+
+    h1 {
+      font-size: 28px;
+      color: #1a1a1a;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .user-info {
+      background: #f5f5f5;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      text-align: left;
+    }
+
+    .user-info p {
+      margin: 10px 0;
+      color: #333;
+    }
+
+    .user-info strong {
+      color: #667eea;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 30px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 10px 5px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #e0e0e0;
+      color: #1a1a1a;
+    }
+
+    .btn-secondary:hover {
+      background: #d0d0d0;
+      transform: translateY(-2px);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error {
+      background: #fee;
+      color: #c00;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #c00;
+    }
+
+    .success {
+      background: #efe;
+      color: #060;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #060;
+    }
+  </style>
 </head>
 <body>
-  <div id="app"></div>
-  <p style="text-align: center; margin-top: 2rem; color: #666;">
-    Redirecionando para login... <a href="login.html" style="color: #0052cc;">Clique aqui se não for redirecionado</a>
-  </p>
+  <div class="container">
+    <svg class="logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <circle cx="100" cy="100" r="95" fill="url(#grad1)" opacity="0.1" stroke="url(#grad1)" stroke-width="2"/>
+      <text x="100" y="120" font-size="60" font-weight="bold" text-anchor="middle" fill="url(#grad1)">💪</text>
+    </svg>
+
+    <div id="content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Carregando seu perfil...</p>
+      </div>
+    </div>
+  </div>
+
   <script src="config.js"></script>
   <script>
-    // Redirecionar para login.html
-    window.location.href = 'login.html';
+    async function loadDashboard() {
+      const content = document.getElementById('content');
+
+      try {
+        // Verificar se existe token
+        const token = localStorage.getItem('auth_token');
+        const userInfo = localStorage.getItem('user_info');
+
+        if (!token) {
+          // Sem token, redirecionar para login
+          window.location.href = '/login.html';
+          return;
+        }
+
+        // Buscar dados do usuário
+        const apiUrl = window.MEU_TREINO_CONFIG?.AI_API_URL || 'https://gymia-backend.onrender.com';
+
+        const response = await fetch(`${apiUrl}/api/user/profile`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Erro ao carregar perfil: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const user = data.user || JSON.parse(userInfo || '{}');
+
+        // Mostrar dashboard
+        content.innerHTML = `
+          <h1>Bem-vindo, ${user.name || 'Usuário'}! 👋</h1>
+          <p class="subtitle">Pronto para começar seu treino?</p>
+
+          <div class="success">
+            ✅ Autenticação bem-sucedida com o Render!
+          </div>
+
+          <div class="user-info">
+            <p><strong>Nome:</strong> ${user.name || 'Não informado'}</p>
+            <p><strong>Email:</strong> ${user.email || 'Não informado'}</p>
+            <p><strong>Provedor:</strong> ${user.provider || 'Local'}</p>
+            <p><strong>Acesso desde:</strong> ${new Date(user.createdAt || Date.now()).toLocaleDateString('pt-BR')}</p>
+          </div>
+
+          <p style="margin-bottom: 30px; color: #666;">Entre para continuar seu treino.</p>
+
+          <button class="btn btn-primary" onclick="startWorkout()">
+            ▶️ Iniciar Treino
+          </button>
+          <button class="btn btn-secondary" onclick="logout()">
+            🚪 Sair
+          </button>
+        `;
+      } catch (error) {
+        console.error('Erro ao carregar dashboard:', error);
+        content.innerHTML = `
+          <h1>Oops! 😕</h1>
+          <div class="error">
+            ${error.message}
+          </div>
+          <p style="color: #666; margin-bottom: 20px;">Tente fazer login novamente</p>
+          <button class="btn btn-secondary" onclick="window.location.href='/login.html'">
+            🔐 Voltar ao Login
+          </button>
+        `;
+      }
+    }
+
+    function startWorkout() {
+      alert('🏋️ Seção de treino em desenvolvimento!');
+    }
+
+    function logout() {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_info');
+      window.location.href = '/login.html';
+    }
+
+    // Carregar dashboard quando a página abrir
+    window.addEventListener('load', loadDashboard);
   </script>
 </body>
 </html>
-
