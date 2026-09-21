@@ -6,7 +6,7 @@ services:
     plan: free
     rootDir: .
     buildCommand: pip install -r ai-backend/requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn google_main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: "3.12"
@@ -21,6 +21,8 @@ services:
       - key: AI_PROVIDER
         value: openai
       - key: OPENAI_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
         sync: false
       - key: ALLOWED_ORIGINS
         value: "https://pija14.github.io,https://localhost:8000,http://localhost:8000,https://127.0.0.1:8000,http://127.0.0.1:8000"
