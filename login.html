@@ -3,102 +3,55 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f4f6f8">
-  <meta name="description" content="GymIA - Seu assistente de treino com IA">
+  <meta name="theme-color" content="#f4f7fb">
+  <meta name="description" content="Meu Treino - Seu treino. Sua evolução.">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon.svg">
-  <title>GymIA - Login</title>
-  <link rel="stylesheet" href="styles.css?v=50">
+  <title>Meu Treino - Login</title>
+  <link rel="stylesheet" href="styles.css?v=51">
   <link rel="stylesheet" href="styles/login.css">
+  <link rel="stylesheet" href="styles/meu-treino-design-system.css">
 </head>
 <body class="login-page">
   <div class="login-container">
-    <!-- Logo -->
     <div class="login-header">
       <div class="gymia-logo">
-        <img src="logo-gymia.svg" alt="GymIA Logo" class="logo-image">
+        <img src="logo-gymia.svg" alt="Meu Treino" class="logo-image">
+        <div class="auth-brand-name">Meu Treino</div>
+        <p style="margin:0;color:#627286;font-size:14px">Seu treino. Sua evolução.</p>
       </div>
     </div>
-
-    <!-- Card de Login -->
     <div class="login-card">
       <div class="login-content">
         <p class="login-label">ACESSO À CONTA</p>
         <h2 class="login-title">Bem-vindo de volta</h2>
         <p class="login-subtitle">Entre para continuar seu treino.</p>
-
-        <!-- Formulário de Login -->
         <form id="loginForm" class="login-form">
-          <!-- Email Input -->
           <div class="form-group">
-            <input
-              type="email"
-              id="emailInput"
-              class="form-input"
-              placeholder="E-mail"
-              required
-              autocomplete="email"
-            >
+            <input type="email" id="emailInput" class="form-input" placeholder="E-mail" required autocomplete="email">
             <label for="emailInput" class="form-label">E-mail</label>
           </div>
-
-          <!-- Password Input -->
           <div class="form-group">
-            <input
-              type="password"
-              id="passwordInput"
-              class="form-input"
-              placeholder="Senha"
-              required
-              autocomplete="current-password"
-            >
+            <input type="password" id="passwordInput" class="form-input" placeholder="Senha" required autocomplete="current-password">
             <label for="passwordInput" class="form-label">Senha</label>
             <button type="button" class="password-toggle" aria-label="Mostrar/ocultar senha">
-              <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M12 5C7 5 2.73 8.11 1 12.46c1.73 4.35 6 7.54 11 7.54s9.27-3.19 11-7.54C21.27 8.11 17 5 12 5m0 9a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/>
-              </svg>
+              <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5C7 5 2.73 8.11 1 12.46c1.73 4.35 6 7.54 11 7.54s9.27-3.19 11-7.54C21.27 8.11 17 5 12 5m0 9a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg>
             </button>
           </div>
-
-          <!-- Submit Button -->
           <button type="submit" class="btn-login btn-primary">Entrar</button>
         </form>
-
-        <!-- Forgot Password -->
-        <div class="login-links">
-          <a href="#" class="link-forgot-password">Esqueci minha senha?</a>
-        </div>
-
-        <!-- Divider -->
-        <div class="divider">
-          <span>ou</span>
-        </div>
-
-        <!-- Google Login Button -->
+        <div class="login-links"><a href="#" class="link-forgot-password">Esqueci minha senha?</a></div>
+        <div class="divider"><span>ou</span></div>
         <button type="button" id="googleLoginBtn" class="btn-google">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="google-icon">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-          </svg>
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="google-icon"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
           Fazer login com o Google
         </button>
-
-        <!-- Sign Up Link -->
-        <p class="login-signup">
-          Ainda não tem conta? <a href="#" class="link-signup">Criar conta.</a>
-        </p>
+        <p class="login-signup">Ainda não tem conta? <a href="#" class="link-signup">Criar conta.</a></p>
       </div>
     </div>
+    <div class="auth-security-note" style="margin:18px auto 0"><span>✓</span> Seus dados ficam separados por conta e protegidos pela API.</div>
   </div>
-
-  <!-- Loading Spinner -->
-  <div id="loadingSpinner" class="loading-spinner" style="display: none;">
-    <div class="spinner"></div>
-  </div>
-
-  <!-- Config and Auth Scripts -->
+  <div id="loadingSpinner" class="loading-spinner" style="display:none"><div class="spinner"></div></div>
   <script src="config.js"></script>
   <script src="auth/google-config.js"></script>
   <script src="auth/auth-manager.js"></script>
