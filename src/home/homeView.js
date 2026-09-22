@@ -19,14 +19,12 @@
     const [year, monthNumber] = month.split("-").map(Number);
     const daysInMonth = new Date(year, monthNumber, 0).getDate();
     const values = Array(daysInMonth).fill(0);
-
     workouts.forEach(w => {
       const date = String(w.date || "");
       if (!date.startsWith(month)) return;
       const day = Number(date.slice(8, 10));
       if (day >= 1 && day <= daysInMonth) values[day - 1] += Number(w.totalTime) || 0;
     });
-
     return { days: Array.from({ length: daysInMonth }, (_, i) => i + 1), values };
   }
 
@@ -43,7 +41,6 @@
         totals.set(key, current);
       });
     });
-
     const preferred = ["Peito", "Peitorais", "Costas", "Pernas", "Membros inferiores", "Ombros", "Bíceps", "Tríceps"];
     const ordered = [];
     preferred.forEach(name => {
@@ -52,7 +49,6 @@
       if (item) { ordered.push(item); totals.delete(key); }
     });
     [...totals.values()].sort((a, b) => b.value - a.value || a.label.localeCompare(b.label, "pt-BR")).forEach(item => ordered.push(item));
-
     if (ordered.length > 7) {
       const visible = ordered.slice(0, 6);
       const other = ordered.slice(6).reduce((sum, item) => sum + item.value, 0);
@@ -106,9 +102,7 @@
     const angle = -90 + (progress * 1.8);
     return `<section class="home-gauge-card" aria-label="Meta semanal">
       <div class="home-chart-head"><div><span class="eyebrow">META SEMANAL</span><h3>Seu progresso na semana</h3></div><strong class="home-gauge-percent">${progress}%</strong></div>
-      <div class="home-gauge-wrap">
-        <div class="home-gauge" style="--gauge-progress:${progress}%;--gauge-angle:${angle}deg" role="img" aria-label="${progress}% da meta semanal concluída"><span class="home-gauge-needle"></span><div class="home-gauge-center"><strong>${weeklyCount}</strong><span>de ${weeklyTarget} treinos</span></div></div>
-      </div>
+      <div class="home-gauge-wrap"><div class="home-gauge" style="--gauge-progress:${progress}%;--gauge-angle:${angle}deg" role="img" aria-label="${progress}% da meta semanal concluída"><span class="home-gauge-needle"></span><div class="home-gauge-center"><strong>${weeklyCount}</strong><span>de ${weeklyTarget} treinos</span></div></div></div>
     </section>`;
   }
 
@@ -129,15 +123,12 @@
     const monthCount = workouts.filter(w => String(w.date || "").startsWith(month)).length;
     const totalTime = workouts.reduce((sum, w) => sum + (Number(w.totalTime) || 0), 0);
     const recent = workouts[workouts.length - 1] || null;
-    const byType = (Array.isArray(stored.myWorkouts) ? stored.myWorkouts : []).map(w => ({ name: w.name, total: workouts.filter(x => x.workoutId === w.id).length }));
-    const favorite = byType.sort((a, b) => b.total - a.total)[0] || null;
     const displayName = typeof window.f2DisplayName === "function" ? window.f2DisplayName : value => String(value || "");
     const fmt = typeof window.fmt === "function" ? window.fmt : formatMinutes;
 
     window.layout(`
       <section class="home-modern-head">
         <div>
-          <span class="eyebrow">MEU TREINO</span>
           <h2>Olá, ${escapeHtml(user?.name || "")}!</h2>
           <p>Como está seu treino?</p>
         </div>
@@ -146,7 +137,6 @@
       <section class="home-kpi-grid" aria-label="Indicadores do treino">
         <article class="home-kpi"><strong>${monthCount}</strong><span>Treinos este mês</span></article>
         <article class="home-kpi"><strong>${formatMinutes(totalTime)}</strong><span>Tempo total</span></article>
-        <article class="home-kpi"><strong>${favorite ? escapeHtml(favorite.name) : "—"}</strong><span>Treino mais realizado</span></article>
       </section>
 
       ${recent ? `<button class="home-recent-row" onclick="showWorkoutDetails('${escapeHtml(recent.id)}')"><span><small>ÚLTIMO TREINO</small><b>${escapeHtml(displayName(recent.type))}</b></span><span>${fmt(recent.totalTime || 0)} · ${recent.completedExercises || 0} exercícios</span></button>` : `<div class="home-empty-row"><span>Ainda não há treinos registrados.</span><button class="primary" onclick="go('trainings')">Começar um treino</button></div>`}
