@@ -127,28 +127,20 @@
     const displayName = typeof window.f2DisplayName === "function" ? window.f2DisplayName : value => String(value || "");
     const fmt = typeof window.fmt === "function" ? window.fmt : formatMinutes;
     const name = String(user?.name || "").trim();
-    const initials = name ? name.split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase() : "MT";
 
     window.layout(`
       <section class="home-modern-head">
         <div class="home-greeting-copy">
-          <span class="home-kicker">MEU TREINO</span>
           <h2>Olá, ${escapeHtml(name || "!")}!</h2>
           <p>Como está seu treino?</p>
-        </div>
-        <div class="home-head-actions" aria-hidden="true">
-          <span class="home-avatar">${escapeHtml(initials)}</span>
-          <span class="home-notification"><span></span></span>
         </div>
       </section>
 
       <section class="home-kpi-grid" aria-label="Indicadores do treino">
         <article class="home-kpi home-kpi-blue">
-          <span class="home-kpi-icon home-calendar-icon"></span>
           <div><span>Treinos este mês</span><strong>${monthCount}</strong></div>
         </article>
         <article class="home-kpi home-kpi-green">
-          <span class="home-kpi-icon home-clock-icon"></span>
           <div><span>Tempo total</span><strong>${formatMinutes(totalTime)}</strong></div>
         </article>
       </section>
@@ -164,10 +156,15 @@
       </section>
 
       <section class="home-chart-card home-activity-card">
-        <div class="home-chart-head home-activity-head"><div><span class="eyebrow">ATIVIDADE</span><h3>Tempo de treino por dia do mês</h3></div><span class="home-period">Este mês <i></i></span></div>
+        <div class="home-chart-head home-activity-head"><div><span class="eyebrow">ATIVIDADE</span><h3>Tempo de treino por dia do mês</h3></div></div>
         ${renderMonthChart(workouts, month)}
       </section>
     `, "home");
+
+    // A Home não usa o cabeçalho global "Meu Treino" nem os dois ícones.
+    // Esta alteração é aplicada somente após a Home ser renderizada.
+    const homeTopbar = document.querySelector(".topbar");
+    if (homeTopbar) homeTopbar.style.display = "none";
   }
 
   window.renderHome = renderHomeModern;
