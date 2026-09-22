@@ -35,6 +35,7 @@
     workouts.forEach(workout => {
       const exercises = Array.isArray(workout.exercises) ? workout.exercises : [];
       exercises.forEach(exercise => {
+        if (exercise.completed === false) return;
         const group = String(exercise.section || "Outros").trim() || "Outros";
         const key = group.toLocaleLowerCase("pt-BR");
         const current = totals.get(key) || { label: group, value: 0 };
@@ -65,7 +66,7 @@
     if (!total) return "conic-gradient(#e9eef2 0 100%)";
     const segments = [];
     let cursor = 0;
-    const palette = ["#22c55e", "#15803d", "#166534", "#65a30d", "#0f766e", "#2563eb", "#64748b"];
+    const palette = ["#f97316", "#ea580c", "#dc2626", "#e11d48", "#f59e0b", "#c2410c", "#fb7185"];
     values.forEach((value, i) => {
       const next = cursor + (value / total) * 100;
       segments.push(`${palette[i % palette.length]} ${cursor}% ${next}%`);
@@ -90,11 +91,25 @@
     const total = data.reduce((sum, item) => sum + item.value, 0);
     if (!total) return `<div class="home-chart-empty">Conclua um treino para visualizar a distribuição.</div>`;
     const gradient = donutGradient(data.map(x => x.value), total);
-    const palette = ["#22c55e", "#15803d", "#166534", "#65a30d", "#0f766e", "#2563eb", "#64748b"];
+    const palette = ["#f97316", "#ea580c", "#dc2626", "#e11d48", "#f59e0b", "#c2410c", "#fb7185"];
     return `<div class="home-muscle-chart">
-      <div class="home-donut-wrap"><div class="home-donut" style="background:${gradient}" role="img" aria-label="Distribuição de treinos por grupo muscular"><div><strong>${total}</strong><span>exercícios</span></div></div></div>
-      <div class="home-muscle-legend">${data.map((item, i) => `<div class="home-legend-row"><span class="home-legend-dot" style="background:${palette[i % palette.length]}"></span><span>${escapeHtml(item.label)}</span><strong>${item.value}</strong></div>`).join("")}</div>
+      <div class="home-donut-wrap"><div class="home-donut" style="background:${gradient}" role="img" aria-label="Distribuição de treinos por grupo muscular"><div><strong>100%</strong><span>distribuição</span></div></div></div>
+      <div class="home-muscle-legend">${data.map((item, i) => {
+        const percentage = Math.round((item.value / total) * 100);
+        return `<div class="home-legend-row"><span class="home-legend-dot" style="background:${palette[i % palette.length]}"></span><span>${escapeHtml(item.label)}</span><strong>${percentage}%</strong></div>`;
+      }).join("")}</div>
     </div>`;
+  }
+
+  function renderWeeklyGauge(weeklyCount, weeklyTarget) {
+    const progress = Math.min(100, Math.round((weeklyCount / weeklyTarget) * 100));
+    const angle = -90 + (progress * 1.8);
+    return `<section class="home-gauge-card" aria-label="Meta semanal">
+      <div class="home-chart-head"><div><span class="eyebrow">META SEMANAL</span><h3>Seu progresso na semana</h3></div><strong class="home-gauge-percent">${progress}%</strong></div>
+      <div class="home-gauge-wrap">
+        <div class="home-gauge" style="--gauge-progress:${progress}%;--gauge-angle:${angle}deg" role="img" aria-label="${progress}% da meta semanal concluída"><span class="home-gauge-needle"></span><div class="home-gauge-center"><strong>${weeklyCount}</strong><span>de ${weeklyTarget} treinos</span></div></div>
+      </div>
+    </section>`;
   }
 
   function renderHomeModern() {
@@ -113,7 +128,6 @@
     const weeklyCount = workouts.filter(w => w.date >= weekStartISO && w.date <= today).length;
     const monthCount = workouts.filter(w => String(w.date || "").startsWith(month)).length;
     const totalTime = workouts.reduce((sum, w) => sum + (Number(w.totalTime) || 0), 0);
-    const progress = Math.min(100, Math.round((weeklyCount / weeklyTarget) * 100));
     const recent = workouts[workouts.length - 1] || null;
     const byType = (Array.isArray(stored.myWorkouts) ? stored.myWorkouts : []).map(w => ({ name: w.name, total: workouts.filter(x => x.workoutId === w.id).length }));
     const favorite = byType.sort((a, b) => b.total - a.total)[0] || null;
@@ -131,21 +145,22 @@
 
       <section class="home-kpi-grid" aria-label="Indicadores do treino">
         <article class="home-kpi"><strong>${monthCount}</strong><span>Treinos este mês</span></article>
-        <article class="home-kpi"><strong>${progress}%</strong><span>Meta semanal</span><small>${weeklyCount} de ${weeklyTarget}</small></article>
         <article class="home-kpi"><strong>${formatMinutes(totalTime)}</strong><span>Tempo total</span></article>
         <article class="home-kpi"><strong>${favorite ? escapeHtml(favorite.name) : "—"}</strong><span>Treino mais realizado</span></article>
       </section>
 
       ${recent ? `<button class="home-recent-row" onclick="showWorkoutDetails('${escapeHtml(recent.id)}')"><span><small>ÚLTIMO TREINO</small><b>${escapeHtml(displayName(recent.type))}</b></span><span>${fmt(recent.totalTime || 0)} · ${recent.completedExercises || 0} exercícios</span></button>` : `<div class="home-empty-row"><span>Ainda não há treinos registrados.</span><button class="primary" onclick="go('trainings')">Começar um treino</button></div>`}
 
-      <section class="home-chart-card">
-        <div class="home-chart-head"><div><span class="eyebrow">ATIVIDADE</span><h3>Tempo de treino por dia do mês</h3></div></div>
-        ${renderMonthChart(workouts, month)}
-      </section>
+      ${renderWeeklyGauge(weeklyCount, weeklyTarget)}
 
       <section class="home-chart-card">
         <div class="home-chart-head"><div><span class="eyebrow">DISTRIBUIÇÃO</span><h3>Treinos por grupo muscular</h3></div></div>
         ${renderMuscleChart(workouts)}
+      </section>
+
+      <section class="home-chart-card">
+        <div class="home-chart-head"><div><span class="eyebrow">ATIVIDADE</span><h3>Tempo de treino por dia do mês</h3></div></div>
+        ${renderMonthChart(workouts, month)}
       </section>
     `, "home");
   }
