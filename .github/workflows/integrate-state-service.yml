@@ -1,0 +1,37 @@
+name: Integrate State Service
+
+on:
+  push:
+    branches: [refactor/arquitetura-modular]
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    if: ${{ !contains(github.event.head_commit.message, 'chore: integrate state service') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/arquitetura-modular
+      - name: Integrate shared state
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app.js')
+          s = p.read_text(encoding='utf-8')
+          old = 'let state = { page:"home", training:null, exerciseIndex:0, exerciseTimer:0, exerciseOneMinuteAlerted:false, exerciseRunning:false, exerciseStartedAt:null, currentSetIndex:0, restTimer:0, restRunning:false, timerInterval:null, restInterval:null };'
+          new = 'let state = window.MeuTreinoState.create();'
+          if old not in s:
+              raise SystemExit('Expected state declaration not found; no changes made.')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+      - name: Commit change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: integrate state service"
+          git push origin refactor/arquitetura-modular
