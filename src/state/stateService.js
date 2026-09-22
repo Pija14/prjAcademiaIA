@@ -35,10 +35,28 @@
     state.restRunning = false;
   }
 
+  /*
+   * Integra o serviço ao runtime legado sem substituir o bloco inteiro do app.js.
+   * O app.js continua sendo a fonte das regras de negócio, mas seu objeto `state`
+   * passa a ser normalizado pelo serviço após todos os scripts terem carregado.
+   * Isso permite uma migração incremental e de baixo risco.
+   */
+  function integrateLegacyRuntimeState() {
+    try {
+      if (typeof state === "object" && state) {
+        state = create(state);
+      }
+    } catch (_) {
+      // O runtime pode não ter declarado `state` em páginas que usem apenas os serviços.
+    }
+  }
+
   window.MeuTreinoState = Object.freeze({
     DEFAULT_STATE,
     create,
     reset,
     stopTimers
   });
+
+  window.addEventListener("DOMContentLoaded", integrateLegacyRuntimeState);
 })();
