@@ -165,7 +165,10 @@
           table.addColumn("string", "Grupo");
           table.addColumn("number", "Exercícios");
           table.addColumn({ type: "string", role: "tooltip" });
-          table.addRows(data.map(item => [item.label, item.value, `${item.label}: ${item.value} exercícios`]));
+          table.addRows(data.map(item => {
+            const percentage = Math.round((item.value / total) * 100);
+            return [`${percentage}%`, item.value, `${item.label}: ${item.value} exercícios`];
+          }));
           const chart = new google.visualization.PieChart(container);
           chart.draw(table, {
             backgroundColor: "transparent", pieHole: 0.64, pieSliceText: "none", pieSliceBorderColor: "#FFFFFF",
