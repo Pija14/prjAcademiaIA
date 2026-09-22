@@ -58,14 +58,16 @@
     return ordered;
   }
 
+  // Paleta suave e distinguível para a distribuição por grupo muscular.
+  const MUSCLE_PALETTE = ["#E9A0A0", "#F2B27D", "#F2CF72", "#86C8A8", "#83B5E3", "#9E92D8", "#C6A1D8"];
+
   function donutGradient(values, total) {
     if (!total) return "conic-gradient(#e9eef2 0 100%)";
     const segments = [];
     let cursor = 0;
-    const palette = ["#f97316", "#ea580c", "#dc2626", "#e11d48", "#f59e0b", "#c2410c", "#fb7185"];
     values.forEach((value, i) => {
       const next = cursor + (value / total) * 100;
-      segments.push(`${palette[i % palette.length]} ${cursor}% ${next}%`);
+      segments.push(`${MUSCLE_PALETTE[i % MUSCLE_PALETTE.length]} ${cursor}% ${next}%`);
       cursor = next;
     });
     return `conic-gradient(${segments.join(",")})`;
@@ -87,12 +89,11 @@
     const total = data.reduce((sum, item) => sum + item.value, 0);
     if (!total) return `<div class="home-chart-empty">Conclua um treino para visualizar a distribuição.</div>`;
     const gradient = donutGradient(data.map(x => x.value), total);
-    const palette = ["#f97316", "#ea580c", "#dc2626", "#e11d48", "#f59e0b", "#c2410c", "#fb7185"];
     return `<div class="home-muscle-chart">
-      <div class="home-donut-wrap"><div class="home-donut" style="background:${gradient}" role="img" aria-label="Distribuição de treinos por grupo muscular"><div><strong>100%</strong><span>distribuição</span></div></div></div>
+      <div class="home-donut-wrap"><div class="home-donut" style="background:${gradient}" role="img" aria-label="Distribuição de ${total} exercícios por grupo muscular"><div><strong>${total}</strong><span>exercícios</span></div></div></div>
       <div class="home-muscle-legend">${data.map((item, i) => {
         const percentage = Math.round((item.value / total) * 100);
-        return `<div class="home-legend-row"><span class="home-legend-dot" style="background:${palette[i % palette.length]}"></span><span>${escapeHtml(item.label)}</span><strong>${percentage}%</strong></div>`;
+        return `<div class="home-legend-row"><span class="home-legend-dot" style="background:${MUSCLE_PALETTE[i % MUSCLE_PALETTE.length]}"></span><span>${escapeHtml(item.label)}</span><strong>${percentage}%</strong></div>`;
       }).join("")}</div>
     </div>`;
   }
