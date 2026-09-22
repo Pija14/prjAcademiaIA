@@ -23,17 +23,19 @@
     googleChartsPromise = new Promise((resolve, reject) => {
       const finish = () => {
         try {
+          if (!window.google?.charts?.load || !window.google?.charts?.setOnLoadCallback) {
+            reject(new Error("Google Charts indisponível"));
+            return;
+          }
           window.google.charts.load("current", { packages: ["corechart"] });
           window.google.charts.setOnLoadCallback(resolve);
-        } catch (error) {
-          reject(error);
-        }
+        } catch (error) { reject(error); }
       };
       const existing = document.getElementById("google-charts-loader");
       if (existing) {
         if (window.google?.charts?.load) finish();
         else existing.addEventListener("load", finish, { once: true });
-        existing.addEventListener("error", reject, { once: true });
+        existing.addEventListener("error", () => reject(new Error("Falha ao carregar Google Charts")), { once: true });
         return;
       }
       const script = document.createElement("script");
@@ -41,7 +43,7 @@
       script.src = "https://www.gstatic.com/charts/loader.js";
       script.async = true;
       script.onload = finish;
-      script.onerror = reject;
+      script.onerror = () => reject(new Error("Falha ao carregar Google Charts"));
       document.head.appendChild(script);
     });
     return googleChartsPromise;
@@ -108,7 +110,7 @@
     const total = data.reduce((sum, item) => sum + item.value, 0);
     if (!total) return `<div class="home-chart-empty">Conclua um treino para visualizar a distribuição.</div>`;
 
-    const chartId = `home-muscle-google-chart-${Date.now()}`;
+    const chartId = `home-muscle-google-chart-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const legend = data.map((item, i) => {
       const percentage = Math.round((item.value / total) * 100);
       return `<div class="home-legend-row"><span class="home-legend-dot" style="background:${MUSCLE_PALETTE[i % MUSCLE_PALETTE.length]}"></span><span>${escapeHtml(item.label)}</span><strong>${percentage}%</strong></div>`;
@@ -116,34 +118,37 @@
 
     requestAnimationFrame(() => {
       const draw = () => {
-        const container = document.getElementById(chartId);
-        if (!container || !window.google?.visualization?.PieChart) return;
-        const table = new google.visualization.DataTable();
-        table.addColumn("string", "Grupo");
-        table.addColumn("number", "Exercícios");
-        table.addColumn({ type: "string", role: "tooltip" });
-        table.addRows(data.map(item => [
-          `${Math.round((item.value / total) * 100)}%`,
-          item.value,
-          `${item.label}: ${item.value} exercícios`
-        ]));
-
-        const chart = new google.visualization.PieChart(container);
-        chart.draw(table, {
-          backgroundColor: "transparent",
-          pieHole: 0.64,
-          pieSliceText: "none",
-          pieSliceBorderColor: "#FFFFFF",
-          colors: MUSCLE_PALETTE.slice(0, data.length),
-          legend: {
-            position: "labeled",
-            textStyle: { color: "#12233F", fontName: "Arial", fontSize: 13, bold: true }
-          },
-          chartArea: { left: 4, top: 4, width: "92%", height: "92%" },
-          tooltip: { textStyle: { fontName: "Arial", fontSize: 12 } },
-          enableInteractivity: true,
-          pieStartAngle: 0
-        });
+        try {
+          const container = document.getElementById(chartId);
+          if (!container || !window.google?.visualization?.PieChart) return;
+          const table = new google.visualization.DataTable();
+          table.addColumn("string", "Grupo");
+          table.addColumn("number", "Exercícios");
+          table.addColumn({ type: "string", role: "tooltip" });
+          table.addRows(data.map(item => [
+            item.label,
+            item.value,
+            `${item.label}: ${item.value} exercícios`
+          ]));
+          const chart = new google.visualization.PieChart(container);
+          chart.draw(table, {
+            backgroundColor: "transparent",
+            pieHole: 0.64,
+            pieSliceText: "none",
+            pieSliceBorderColor: "#FFFFFF",
+            colors: data.map((_, i) => MUSCLE_PALETTE[i % MUSCLE_PALETTE.length]),
+            legend: {
+              position: "labeled",
+              textStyle: { color: "#12233F", fontName: "Arial", fontSize: 13, bold: true }
+            },
+            chartArea: { left: 4, top: 4, width: "92%", height: "92%" },
+            tooltip: { textStyle: { fontName: "Arial", fontSize: 12 } },
+            enableInteractivity: true,
+            pieStartAngle: 0
+          });
+        } catch (_) {
+          /* O gráfico é apenas visual; a Home continua funcionando se o provedor falhar. */
+        }
       };
       ensureGoogleCharts().then(draw).catch(() => {});
     });
