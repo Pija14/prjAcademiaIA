@@ -58,8 +58,7 @@
     return ordered;
   }
 
-  // Paleta suave e distinguível para a distribuição por grupo muscular.
-  const MUSCLE_PALETTE = ["#E9A0A0", "#F2B27D", "#F2CF72", "#86C8A8", "#83B5E3", "#9E92D8", "#C6A1D8"];
+  const MUSCLE_PALETTE = ["#E88B8B", "#E9A15F", "#E9C65B", "#72C49A", "#6FA9DF", "#9388D2", "#B58FD0"];
 
   function donutGradient(values, total) {
     if (!total) return "conic-gradient(#e9eef2 0 100%)";
@@ -99,11 +98,12 @@
   }
 
   function renderWeeklyGauge(weeklyCount, weeklyTarget) {
-    const progress = Math.min(100, Math.round((weeklyCount / weeklyTarget) * 100));
+    const safeTarget = Math.max(1, Number(weeklyTarget) || 1);
+    const progress = Math.min(100, Math.round((weeklyCount / safeTarget) * 100));
     const angle = -90 + (progress * 1.8);
     return `<section class="home-gauge-card" aria-label="Meta semanal">
-      <div class="home-chart-head"><div><span class="eyebrow">META SEMANAL</span><h3>Seu progresso na semana</h3></div><strong class="home-gauge-percent">${progress}%</strong></div>
-      <div class="home-gauge-wrap"><div class="home-gauge" style="--gauge-progress:${progress}%;--gauge-angle:${angle}deg" role="img" aria-label="${progress}% da meta semanal concluída"><span class="home-gauge-needle"></span><div class="home-gauge-center"><strong>${weeklyCount}</strong><span>de ${weeklyTarget} treinos</span></div></div></div>
+      <div class="home-chart-head"><div><span class="eyebrow">META SEMANAL</span><h3>Treinos realizados</h3></div></div>
+      <div class="home-gauge-wrap"><div class="home-gauge" style="--gauge-progress:${progress}%;--gauge-angle:${angle}deg" role="img" aria-label="${progress}% da meta semanal concluída"><span class="home-gauge-needle"></span><div class="home-gauge-center"><strong>${weeklyCount} de ${safeTarget}</strong><span>${progress}%</span></div></div></div>
     </section>`;
   }
 
@@ -126,31 +126,45 @@
     const recent = workouts[workouts.length - 1] || null;
     const displayName = typeof window.f2DisplayName === "function" ? window.f2DisplayName : value => String(value || "");
     const fmt = typeof window.fmt === "function" ? window.fmt : formatMinutes;
+    const name = String(user?.name || "").trim();
+    const initials = name ? name.split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase() : "MT";
 
     window.layout(`
       <section class="home-modern-head">
-        <div>
-          <h2>Olá, ${escapeHtml(user?.name || "")}!</h2>
+        <div class="home-greeting-copy">
+          <span class="home-kicker">MEU TREINO</span>
+          <h2>Olá, ${escapeHtml(name || "!")}!</h2>
           <p>Como está seu treino?</p>
+        </div>
+        <div class="home-head-actions" aria-hidden="true">
+          <span class="home-avatar">${escapeHtml(initials)}</span>
+          <span class="home-notification"><span></span></span>
         </div>
       </section>
 
       <section class="home-kpi-grid" aria-label="Indicadores do treino">
-        <article class="home-kpi"><strong>${monthCount}</strong><span>Treinos este mês</span></article>
-        <article class="home-kpi"><strong>${formatMinutes(totalTime)}</strong><span>Tempo total</span></article>
+        <article class="home-kpi home-kpi-blue">
+          <span class="home-kpi-icon home-calendar-icon"></span>
+          <div><span>Treinos este mês</span><strong>${monthCount}</strong></div>
+        </article>
+        <article class="home-kpi home-kpi-green">
+          <span class="home-kpi-icon home-clock-icon"></span>
+          <div><span>Tempo total</span><strong>${formatMinutes(totalTime)}</strong></div>
+        </article>
       </section>
 
       ${recent ? `<button class="home-recent-row" onclick="showWorkoutDetails('${escapeHtml(recent.id)}')"><span><small>ÚLTIMO TREINO</small><b>${escapeHtml(displayName(recent.type))}</b></span><span>${fmt(recent.totalTime || 0)} · ${recent.completedExercises || 0} exercícios</span></button>` : `<div class="home-empty-row"><span>Ainda não há treinos registrados.</span><button class="primary" onclick="go('trainings')">Começar um treino</button></div>`}
 
-      ${renderWeeklyGauge(weeklyCount, weeklyTarget)}
-
-      <section class="home-chart-card">
-        <div class="home-chart-head"><div><span class="eyebrow">DISTRIBUIÇÃO</span><h3>Treinos por grupo muscular</h3></div></div>
-        ${renderMuscleChart(workouts)}
+      <section class="home-analysis-grid">
+        <section class="home-chart-card home-distribution-card">
+          <div class="home-chart-head"><div><span class="eyebrow">DISTRIBUIÇÃO</span><h3>Exercícios por grupo muscular</h3></div></div>
+          ${renderMuscleChart(workouts)}
+        </section>
+        ${renderWeeklyGauge(weeklyCount, weeklyTarget)}
       </section>
 
-      <section class="home-chart-card">
-        <div class="home-chart-head"><div><span class="eyebrow">ATIVIDADE</span><h3>Tempo de treino por dia do mês</h3></div></div>
+      <section class="home-chart-card home-activity-card">
+        <div class="home-chart-head home-activity-head"><div><span class="eyebrow">ATIVIDADE</span><h3>Tempo de treino por dia do mês</h3></div><span class="home-period">Este mês <i></i></span></div>
         ${renderMonthChart(workouts, month)}
       </section>
     `, "home");
