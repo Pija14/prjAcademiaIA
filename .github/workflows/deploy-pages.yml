@@ -11,14 +11,11 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-refactor
   cancel-in-progress: false
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
