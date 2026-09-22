@@ -159,11 +159,17 @@
     return list();
   }
 
-  window.MeuTreinoExerciseLibrary = Object.freeze({
+  const api = Object.freeze({
     list,
     search,
     save,
     create,
     seed
   });
+
+  window.MeuTreinoExerciseLibrary = api;
+
+  // Compatibilidade temporária com o app.js legado.
+  // Permite remover a implementação duplicada sem quebrar referências existentes.
+  window.ExerciseLibrary = api;
 })();
