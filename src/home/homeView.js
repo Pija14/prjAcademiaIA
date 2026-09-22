@@ -3,6 +3,8 @@
   const originalRenderHome = window.renderHome;
   if (typeof originalRenderHome !== "function") return;
 
+  let googleChartsPromise = null;
+
   function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>\"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#039;"}[m]));
   }
@@ -13,6 +15,36 @@
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
     return m ? `${h}h ${m}min` : `${h}h`;
+  }
+
+  function ensureGoogleCharts() {
+    if (window.google?.visualization?.PieChart) return Promise.resolve();
+    if (googleChartsPromise) return googleChartsPromise;
+    googleChartsPromise = new Promise((resolve, reject) => {
+      const finish = () => {
+        try {
+          window.google.charts.load("current", { packages: ["corechart"] });
+          window.google.charts.setOnLoadCallback(resolve);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      const existing = document.getElementById("google-charts-loader");
+      if (existing) {
+        if (window.google?.charts?.load) finish();
+        else existing.addEventListener("load", finish, { once: true });
+        existing.addEventListener("error", reject, { once: true });
+        return;
+      }
+      const script = document.createElement("script");
+      script.id = "google-charts-loader";
+      script.src = "https://www.gstatic.com/charts/loader.js";
+      script.async = true;
+      script.onload = finish;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+    return googleChartsPromise;
   }
 
   function buildMonthData(workouts, month) {
@@ -60,18 +92,6 @@
 
   const MUSCLE_PALETTE = ["#E88B8B", "#E9A15F", "#E9C65B", "#72C49A", "#6FA9DF", "#9388D2", "#B58FD0"];
 
-  function donutGradient(values, total) {
-    if (!total) return "conic-gradient(#e9eef2 0 100%)";
-    const segments = [];
-    let cursor = 0;
-    values.forEach((value, i) => {
-      const next = cursor + (value / total) * 100;
-      segments.push(`${MUSCLE_PALETTE[i % MUSCLE_PALETTE.length]} ${cursor}% ${next}%`);
-      cursor = next;
-    });
-    return `conic-gradient(${segments.join(",")})`;
-  }
-
   function renderMonthChart(workouts, month) {
     const { days, values } = buildMonthData(workouts, month);
     const max = Math.max(...values, 1);
@@ -87,14 +107,52 @@
     const data = buildMuscleData(workouts);
     const total = data.reduce((sum, item) => sum + item.value, 0);
     if (!total) return `<div class="home-chart-empty">Conclua um treino para visualizar a distribuição.</div>`;
-    const gradient = donutGradient(data.map(x => x.value), total);
-    return `<div class="home-muscle-chart">
-      <div class="home-donut-wrap"><div class="home-donut" style="background:${gradient}" role="img" aria-label="Distribuição de ${total} exercícios por grupo muscular"><div><strong>${total}</strong><span>exercícios</span></div></div></div>
-      <div class="home-muscle-legend">${data.map((item, i) => {
-        const percentage = Math.round((item.value / total) * 100);
-        return `<div class="home-legend-row"><span class="home-legend-dot" style="background:${MUSCLE_PALETTE[i % MUSCLE_PALETTE.length]}"></span><span>${escapeHtml(item.label)}</span><strong>${percentage}%</strong></div>`;
-      }).join("")}</div>
-    </div>`;
+
+    const chartId = `home-muscle-google-chart-${Date.now()}`;
+    const legend = data.map((item, i) => {
+      const percentage = Math.round((item.value / total) * 100);
+      return `<div class="home-legend-row"><span class="home-legend-dot" style="background:${MUSCLE_PALETTE[i % MUSCLE_PALETTE.length]}"></span><span>${escapeHtml(item.label)}</span><strong>${percentage}%</strong></div>`;
+    }).join("");
+
+    requestAnimationFrame(() => {
+      const draw = () => {
+        const container = document.getElementById(chartId);
+        if (!container || !window.google?.visualization?.PieChart) return;
+        const table = new google.visualization.DataTable();
+        table.addColumn("string", "Grupo");
+        table.addColumn("number", "Exercícios");
+        table.addColumn({ type: "string", role: "tooltip" });
+        table.addRows(data.map(item => [
+          `${Math.round((item.value / total) * 100)}%`,
+          item.value,
+          `${item.label}: ${item.value} exercícios`
+        ]));
+
+        const chart = new google.visualization.PieChart(container);
+        chart.draw(table, {
+          backgroundColor: "transparent",
+          pieHole: 0.64,
+          pieSliceText: "none",
+          pieSliceBorderColor: "#FFFFFF",
+          colors: MUSCLE_PALETTE.slice(0, data.length),
+          legend: {
+            position: "labeled",
+            textStyle: { color: "#12233F", fontName: "Arial", fontSize: 13, bold: true }
+          },
+          chartArea: { left: 4, top: 4, width: "92%", height: "92%" },
+          tooltip: { textStyle: { fontName: "Arial", fontSize: 12 } },
+          enableInteractivity: true,
+          pieStartAngle: 0
+        });
+      };
+      ensureGoogleCharts().then(draw).catch(() => {});
+    });
+
+    return `<div class="home-google-donut-wrap">
+      <div class="home-google-donut" id="${chartId}" role="img" aria-label="Distribuição de ${total} exercícios por grupo muscular"></div>
+      <div class="home-google-donut-center" aria-hidden="true"><strong>${total}</strong><span>exercícios</span></div>
+    </div>
+    <div class="home-muscle-legend">${legend}</div>`;
   }
 
   function renderWeeklyGauge(weeklyCount, weeklyTarget) {
@@ -150,7 +208,7 @@
       <section class="home-analysis-grid">
         <section class="home-chart-card home-distribution-card">
           <div class="home-chart-head"><div><span class="eyebrow">DISTRIBUIÇÃO</span><h3>Exercícios por grupo muscular</h3></div></div>
-          ${renderMuscleChart(workouts)}
+          <div class="home-muscle-chart">${renderMuscleChart(workouts)}</div>
         </section>
         ${renderWeeklyGauge(weeklyCount, weeklyTarget)}
       </section>
@@ -161,8 +219,6 @@
       </section>
     `, "home");
 
-    // A Home não usa o cabeçalho global "Meu Treino" nem os dois ícones.
-    // Esta alteração é aplicada somente após a Home ser renderizada.
     const homeTopbar = document.querySelector(".topbar");
     if (homeTopbar) homeTopbar.style.display = "none";
   }
