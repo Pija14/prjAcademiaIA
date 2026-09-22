@@ -18,7 +18,7 @@
   }
 
   function ensureGoogleCharts() {
-    if (window.google?.visualization?.PieChart) return Promise.resolve();
+    if (window.google?.visualization?.PieChart && window.google?.visualization?.Gauge) return Promise.resolve();
     if (googleChartsPromise) return googleChartsPromise;
     googleChartsPromise = new Promise((resolve, reject) => {
       const finish = () => {
@@ -27,7 +27,7 @@
             reject(new Error("Google Charts indisponível"));
             return;
           }
-          window.google.charts.load("current", { packages: ["corechart"] });
+          window.google.charts.load("current", { packages: ["corechart", "gauge"] });
           window.google.charts.setOnLoadCallback(resolve);
         } catch (error) { reject(error); }
       };
@@ -125,49 +125,59 @@
           table.addColumn("string", "Grupo");
           table.addColumn("number", "Exercícios");
           table.addColumn({ type: "string", role: "tooltip" });
-          table.addRows(data.map(item => [
-            item.label,
-            item.value,
-            `${item.label}: ${item.value} exercícios`
-          ]));
+          table.addRows(data.map(item => [item.label, item.value, `${item.label}: ${item.value} exercícios`]));
           const chart = new google.visualization.PieChart(container);
           chart.draw(table, {
-            backgroundColor: "transparent",
-            pieHole: 0.64,
-            pieSliceText: "none",
-            pieSliceBorderColor: "#FFFFFF",
+            backgroundColor: "transparent", pieHole: 0.64, pieSliceText: "none", pieSliceBorderColor: "#FFFFFF",
             colors: data.map((_, i) => MUSCLE_PALETTE[i % MUSCLE_PALETTE.length]),
-            legend: {
-              position: "labeled",
-              textStyle: { color: "#12233F", fontName: "Arial", fontSize: 13, bold: true }
-            },
-            chartArea: { left: 4, top: 4, width: "92%", height: "92%" },
-            tooltip: { textStyle: { fontName: "Arial", fontSize: 12 } },
-            enableInteractivity: true,
-            pieStartAngle: 0
+            legend: { position: "labeled", textStyle: { color: "#12233F", fontName: "Arial", fontSize: 13, bold: true } },
+            chartArea: { left: 4, top: 4, width: "92%", height: "92%" }, tooltip: { textStyle: { fontName: "Arial", fontSize: 12 } },
+            enableInteractivity: true, pieStartAngle: 0
           });
-        } catch (_) {
-          /* O gráfico é apenas visual; a Home continua funcionando se o provedor falhar. */
-        }
+        } catch (_) {}
       };
       ensureGoogleCharts().then(draw).catch(() => {});
     });
 
-    return `<div class="home-google-donut-wrap">
-      <div class="home-google-donut" id="${chartId}" role="img" aria-label="Distribuição de ${total} exercícios por grupo muscular"></div>
-      <div class="home-google-donut-center" aria-hidden="true"><strong>${total}</strong><span>exercícios</span></div>
-    </div>
-    <div class="home-muscle-legend">${legend}</div>`;
+    return `<div class="home-google-donut-wrap"><div class="home-google-donut" id="${chartId}" role="img" aria-label="Distribuição de ${total} exercícios por grupo muscular"></div><div class="home-google-donut-center" aria-hidden="true"><strong>${total}</strong><span>exercícios</span></div></div><div class="home-muscle-legend">${legend}</div>`;
   }
 
   function renderWeeklyGauge(weeklyCount, weeklyTarget) {
     const safeTarget = Math.max(1, Number(weeklyTarget) || 1);
     const progress = Math.min(100, Math.round((weeklyCount / safeTarget) * 100));
-    const angle = -90 + (progress * 1.8);
-    return `<section class="home-gauge-card" aria-label="Meta semanal">
-      <div class="home-chart-head"><div><span class="eyebrow">META SEMANAL</span><h3>Treinos realizados</h3></div></div>
-      <div class="home-gauge-wrap"><div class="home-gauge" style="--gauge-progress:${progress}%;--gauge-angle:${angle}deg" role="img" aria-label="${progress}% da meta semanal concluída"><span class="home-gauge-needle"></span><div class="home-gauge-center"><strong>${weeklyCount} de ${safeTarget}</strong><span>${progress}%</span></div></div></div>
-    </section>`;
+    const gaugeId = `home-weekly-google-gauge-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    requestAnimationFrame(() => {
+      const draw = () => {
+        try {
+          const container = document.getElementById(gaugeId);
+          if (!container || !window.google?.visualization?.Gauge) return;
+          const table = google.visualization.arrayToDataTable([
+            ["Meta", "Valor"],
+            ["Treinos", Math.min(safeTarget, weeklyCount)]
+          ]);
+          const chart = new google.visualization.Gauge(container);
+          chart.draw(table, {
+            min: 0,
+            max: safeTarget,
+            minorTicks: 0,
+            majorTicks: ["0", String(Math.ceil(safeTarget / 2)), String(safeTarget)],
+            greenFrom: 0,
+            greenTo: safeTarget,
+            greenColor: "#72C49A",
+            yellowFrom: 0,
+            yellowTo: 0,
+            redFrom: safeTarget,
+            redTo: safeTarget,
+            width: 300,
+            height: 190
+          });
+        } catch (_) {}
+      };
+      ensureGoogleCharts().then(draw).catch(() => {});
+    });
+
+    return `<section class="home-gauge-card" aria-label="Meta semanal"><div class="home-chart-head"><div><span class="eyebrow">META SEMANAL</span><h3>Treinos realizados</h3></div></div><div class="home-google-gauge-wrap"><div class="home-google-gauge" id="${gaugeId}" role="img" aria-label="${weeklyCount} de ${safeTarget} treinos realizados nesta semana"></div><div class="home-google-gauge-caption"><strong>${weeklyCount} de ${safeTarget}</strong><span>${progress}%</span></div></div></section>`;
   }
 
   function renderHomeModern() {
@@ -192,36 +202,11 @@
     const name = String(user?.name || "").trim();
 
     window.layout(`
-      <section class="home-modern-head">
-        <div class="home-greeting-copy">
-          <h2>Olá, ${escapeHtml(name || "!")}!</h2>
-          <p>Como está seu treino?</p>
-        </div>
-      </section>
-
-      <section class="home-kpi-grid" aria-label="Indicadores do treino">
-        <article class="home-kpi home-kpi-blue">
-          <div><span>Treinos este mês</span><strong>${monthCount}</strong></div>
-        </article>
-        <article class="home-kpi home-kpi-green">
-          <div><span>Tempo total</span><strong>${formatMinutes(totalTime)}</strong></div>
-        </article>
-      </section>
-
+      <section class="home-modern-head"><div class="home-greeting-copy"><h2>Olá, ${escapeHtml(name || "!")}!</h2><p>Como está seu treino?</p></div></section>
+      <section class="home-kpi-grid" aria-label="Indicadores do treino"><article class="home-kpi home-kpi-blue"><div><span>Treinos este mês</span><strong>${monthCount}</strong></div></article><article class="home-kpi home-kpi-green"><div><span>Tempo total</span><strong>${formatMinutes(totalTime)}</strong></div></article></section>
       ${recent ? `<button class="home-recent-row" onclick="showWorkoutDetails('${escapeHtml(recent.id)}')"><span><small>ÚLTIMO TREINO</small><b>${escapeHtml(displayName(recent.type))}</b></span><span>${fmt(recent.totalTime || 0)} · ${recent.completedExercises || 0} exercícios</span></button>` : `<div class="home-empty-row"><span>Ainda não há treinos registrados.</span><button class="primary" onclick="go('trainings')">Começar um treino</button></div>`}
-
-      <section class="home-analysis-grid">
-        <section class="home-chart-card home-distribution-card">
-          <div class="home-chart-head"><div><span class="eyebrow">DISTRIBUIÇÃO</span><h3>Exercícios por grupo muscular</h3></div></div>
-          <div class="home-muscle-chart">${renderMuscleChart(workouts)}</div>
-        </section>
-        ${renderWeeklyGauge(weeklyCount, weeklyTarget)}
-      </section>
-
-      <section class="home-chart-card home-activity-card">
-        <div class="home-chart-head home-activity-head"><div><span class="eyebrow">ATIVIDADE</span><h3>Tempo de treino por dia do mês</h3></div></div>
-        ${renderMonthChart(workouts, month)}
-      </section>
+      <section class="home-analysis-grid"><section class="home-chart-card home-distribution-card"><div class="home-chart-head"><div><span class="eyebrow">DISTRIBUIÇÃO</span><h3>Exercícios por grupo muscular</h3></div></div><div class="home-muscle-chart">${renderMuscleChart(workouts)}</div></section>${renderWeeklyGauge(weeklyCount, weeklyTarget)}</section>
+      <section class="home-chart-card home-activity-card"><div class="home-chart-head home-activity-head"><div><span class="eyebrow">ATIVIDADE</span><h3>Tempo de treino por dia do mês</h3></div></div>${renderMonthChart(workouts, month)}</section>
     `, "home");
 
     const homeTopbar = document.querySelector(".topbar");
