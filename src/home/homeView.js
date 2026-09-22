@@ -96,13 +96,53 @@
 
   function renderMonthChart(workouts, month) {
     const { days, values } = buildMonthData(workouts, month);
-    const max = Math.max(...values, 1);
-    return `<div class="home-month-chart-scroll"><div class="home-month-chart" role="img" aria-label="Tempo de treino por dia do mês">
-      ${days.map((day, i) => {
-        const height = values[i] ? Math.max(10, Math.round((values[i] / max) * 100)) : 3;
-        return `<div class="home-month-column"><div class="home-month-value">${values[i] ? formatMinutes(values[i]) : ""}</div><div class="home-month-track"><span style="height:${height}%"></span></div><small>${day}</small></div>`;
-      }).join("")}
-    </div></div>`;
+    const chartId = `home-month-google-chart-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    requestAnimationFrame(() => {
+      const draw = () => {
+        try {
+          const container = document.getElementById(chartId);
+          if (!container || !window.google?.visualization?.ColumnChart) return;
+          const table = new google.visualization.DataTable();
+          table.addColumn("string", "Dia");
+          table.addColumn("number", "Minutos");
+          table.addColumn({ type: "string", role: "tooltip" });
+          table.addRows(days.map((day, i) => {
+            const minutes = Math.round(Math.max(0, Number(values[i]) || 0) / 60);
+            return [String(day), minutes, `${day}: ${formatMinutes(values[i])}`];
+          }));
+          const chart = new google.visualization.ColumnChart(container);
+          chart.draw(table, {
+            backgroundColor: "transparent",
+            colors: ["#6FA9DF"],
+            legend: { position: "none" },
+            chartArea: { left: 48, top: 16, width: "92%", height: "72%" },
+            hAxis: {
+              title: "Dia",
+              textStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 },
+              titleTextStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 },
+              slantedText: false,
+              showTextEvery: days.length > 20 ? 2 : 1,
+              gridlines: { color: "transparent" }
+            },
+            vAxis: {
+              title: "Minutos",
+              minValue: 0,
+              format: "0",
+              textStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 },
+              titleTextStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 },
+              gridlines: { color: "#E6EBF2", count: 5 }
+            },
+            bar: { groupWidth: "58%" },
+            tooltip: { textStyle: { fontName: "Arial", fontSize: 12 } },
+            enableInteractivity: true
+          });
+        } catch (_) {}
+      };
+      ensureGoogleCharts().then(draw).catch(() => {});
+    });
+
+    return `<div class="home-month-chart-scroll"><div class="home-month-google-chart" id="${chartId}" role="img" aria-label="Tempo de treino por dia do mês"></div></div>`;
   }
 
   function renderMuscleChart(workouts) {
