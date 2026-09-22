@@ -14,7 +14,10 @@
   <div id="app"></div>
   <!-- Optional local deployment configuration. This file is intentionally not tracked. -->
   <script src="config.js"></script>
-  <script src="app.js?v=50"></script>
+  <!-- Serviços compartilhados do frontend. Mantemos app.js como runtime legado durante a migração. -->
+  <script src="src/storage/localStore.js"></script>
+  <script src="src/api/apiClient.js"></script>
+  <script src="src/auth/authService.js"></script>
+  <script src="app.js?v=51"></script>
 </body>
 </html>
-
