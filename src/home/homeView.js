@@ -7,12 +7,6 @@
     return String(value ?? "").replace(/[&<>\"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#039;"}[m]));
   }
 
-  function weekdayIndex(iso) {
-    if (!iso) return -1;
-    const d = new Date(`${iso}T12:00:00`);
-    return Number.isNaN(d.getTime()) ? -1 : (d.getDay() + 6) % 7;
-  }
-
   function formatMinutes(seconds) {
     const minutes = Math.round(Math.max(0, Number(seconds) || 0) / 60);
     if (minutes < 60) return `${minutes} min`;
@@ -21,14 +15,19 @@
     return m ? `${h}h ${m}min` : `${h}h`;
   }
 
-  function buildWeekdayData(workouts) {
-    const labels = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
-    const values = Array(7).fill(0);
+  function buildMonthData(workouts, month) {
+    const [year, monthNumber] = month.split("-").map(Number);
+    const daysInMonth = new Date(year, monthNumber, 0).getDate();
+    const values = Array(daysInMonth).fill(0);
+
     workouts.forEach(w => {
-      const index = weekdayIndex(w.date);
-      if (index >= 0) values[index] += Number(w.totalTime) || 0;
+      const date = String(w.date || "");
+      if (!date.startsWith(month)) return;
+      const day = Number(date.slice(8, 10));
+      if (day >= 1 && day <= daysInMonth) values[day - 1] += Number(w.totalTime) || 0;
     });
-    return { labels, values };
+
+    return { days: Array.from({ length: daysInMonth }, (_, i) => i + 1), values };
   }
 
   function buildMuscleData(workouts) {
@@ -75,15 +74,15 @@
     return `conic-gradient(${segments.join(",")})`;
   }
 
-  function renderWeekdayChart(workouts) {
-    const { labels, values } = buildWeekdayData(workouts);
+  function renderMonthChart(workouts, month) {
+    const { days, values } = buildMonthData(workouts, month);
     const max = Math.max(...values, 1);
-    return `<div class="home-week-chart" role="img" aria-label="Tempo de treino por dia da semana">
-      ${labels.map((label, i) => {
-        const height = values[i] ? Math.max(10, Math.round((values[i] / max) * 100)) : 4;
-        return `<div class="home-week-column"><div class="home-week-value">${values[i] ? formatMinutes(values[i]) : ""}</div><div class="home-week-track"><span style="height:${height}%"></span></div><small>${label}</small></div>`;
+    return `<div class="home-month-chart-scroll"><div class="home-month-chart" role="img" aria-label="Tempo de treino por dia do mês">
+      ${days.map((day, i) => {
+        const height = values[i] ? Math.max(10, Math.round((values[i] / max) * 100)) : 3;
+        return `<div class="home-month-column"><div class="home-month-value">${values[i] ? formatMinutes(values[i]) : ""}</div><div class="home-month-track"><span style="height:${height}%"></span></div><small>${day}</small></div>`;
       }).join("")}
-    </div>`;
+    </div></div>`;
   }
 
   function renderMuscleChart(workouts) {
@@ -106,11 +105,11 @@
     const todayISO = typeof window.todayISO === "function" ? window.todayISO : () => new Date().toISOString().slice(0, 10);
     const today = todayISO();
     const month = today.slice(0, 7);
+    const weeklyTarget = Number(stored.settings?.weeklyGoal) || 4;
     const weekStart = new Date(`${today}T12:00:00`);
     const day = (weekStart.getDay() + 6) % 7;
     weekStart.setDate(weekStart.getDate() - day);
     const weekStartISO = `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, "0")}-${String(weekStart.getDate()).padStart(2, "0")}`;
-    const weeklyTarget = Number(stored.settings?.weeklyGoal) || 4;
     const weeklyCount = workouts.filter(w => w.date >= weekStartISO && w.date <= today).length;
     const monthCount = workouts.filter(w => String(w.date || "").startsWith(month)).length;
     const totalTime = workouts.reduce((sum, w) => sum + (Number(w.totalTime) || 0), 0);
@@ -140,8 +139,8 @@
       ${recent ? `<button class="home-recent-row" onclick="showWorkoutDetails('${escapeHtml(recent.id)}')"><span><small>ÚLTIMO TREINO</small><b>${escapeHtml(displayName(recent.type))}</b></span><span>${fmt(recent.totalTime || 0)} · ${recent.completedExercises || 0} exercícios</span></button>` : `<div class="home-empty-row"><span>Ainda não há treinos registrados.</span><button class="primary" onclick="go('trainings')">Começar um treino</button></div>`}
 
       <section class="home-chart-card">
-        <div class="home-chart-head"><div><span class="eyebrow">ATIVIDADE</span><h3>Tempo de treino por dia da semana</h3></div></div>
-        ${renderWeekdayChart(workouts)}
+        <div class="home-chart-head"><div><span class="eyebrow">ATIVIDADE</span><h3>Tempo de treino por dia do mês</h3></div></div>
+        ${renderMonthChart(workouts, month)}
       </section>
 
       <section class="home-chart-card">
