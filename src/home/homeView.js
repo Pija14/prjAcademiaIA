@@ -18,7 +18,7 @@
   }
 
   function ensureGoogleCharts() {
-    if (window.google?.visualization?.PieChart && window.google?.visualization?.Gauge) return Promise.resolve();
+    if (window.google?.visualization?.PieChart) return Promise.resolve();
     if (googleChartsPromise) return googleChartsPromise;
     googleChartsPromise = new Promise((resolve, reject) => {
       const finish = () => {
@@ -27,7 +27,7 @@
             reject(new Error("Google Charts indisponível"));
             return;
           }
-          window.google.charts.load("current", { packages: ["corechart", "gauge"] });
+          window.google.charts.load("current", { packages: ["corechart"] });
           window.google.charts.setOnLoadCallback(resolve);
         } catch (error) { reject(error); }
       };
@@ -144,40 +144,23 @@
 
   function renderWeeklyGauge(weeklyCount, weeklyTarget) {
     const safeTarget = Math.max(1, Number(weeklyTarget) || 1);
-    const progress = Math.min(100, Math.round((weeklyCount / safeTarget) * 100));
-    const gaugeId = `home-weekly-google-gauge-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const safeCount = Math.max(0, Number(weeklyCount) || 0);
+    const progress = Math.min(100, Math.round((safeCount / safeTarget) * 100));
+    const radius = 92;
+    const circumference = Math.PI * radius;
+    const dash = Math.max(0, Math.min(circumference, circumference * (progress / 100)));
+    const gaugeId = `home-weekly-progress-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-    requestAnimationFrame(() => {
-      const draw = () => {
-        try {
-          const container = document.getElementById(gaugeId);
-          if (!container || !window.google?.visualization?.Gauge) return;
-          const table = google.visualization.arrayToDataTable([
-            ["Meta", "Valor"],
-            ["Treinos", Math.min(safeTarget, weeklyCount)]
-          ]);
-          const chart = new google.visualization.Gauge(container);
-          chart.draw(table, {
-            min: 0,
-            max: safeTarget,
-            minorTicks: 0,
-            majorTicks: ["0", String(Math.ceil(safeTarget / 2)), String(safeTarget)],
-            greenFrom: 0,
-            greenTo: safeTarget,
-            greenColor: "#72C49A",
-            yellowFrom: 0,
-            yellowTo: 0,
-            redFrom: safeTarget,
-            redTo: safeTarget,
-            width: 300,
-            height: 190
-          });
-        } catch (_) {}
-      };
-      ensureGoogleCharts().then(draw).catch(() => {});
-    });
-
-    return `<section class="home-gauge-card" aria-label="Meta semanal"><div class="home-chart-head"><div><span class="eyebrow">META SEMANAL</span><h3>Treinos realizados</h3></div></div><div class="home-google-gauge-wrap"><div class="home-google-gauge" id="${gaugeId}" role="img" aria-label="${weeklyCount} de ${safeTarget} treinos realizados nesta semana"></div><div class="home-google-gauge-caption"><strong>${weeklyCount} de ${safeTarget}</strong><span>${progress}%</span></div></div></section>`;
+    return `<section class="home-gauge-card" aria-label="Meta semanal">
+      <div class="home-chart-head"><div><span class="eyebrow">META SEMANAL</span><h3>Treinos realizados</h3></div></div>
+      <div class="home-semicircle-wrap">
+        <svg class="home-semicircle" viewBox="0 0 220 125" role="img" aria-label="${safeCount} de ${safeTarget} treinos realizados nesta semana">
+          <path class="home-semicircle-track" d="M 18 110 A 92 92 0 0 1 202 110" pathLength="100"></path>
+          <path id="${gaugeId}" class="home-semicircle-progress" d="M 18 110 A 92 92 0 0 1 202 110" pathLength="100" style="stroke-dasharray:${progress} 100"></path>
+        </svg>
+        <div class="home-semicircle-caption"><strong>${safeCount} de ${safeTarget}</strong><span>${progress}%</span></div>
+      </div>
+    </section>`;
   }
 
   function renderHomeModern() {
