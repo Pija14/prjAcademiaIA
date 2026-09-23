@@ -113,35 +113,16 @@
           }));
           const chart = new google.visualization.ColumnChart(container);
           chart.draw(table, {
-            backgroundColor: "transparent",
-            colors: ["#6FA9DF"],
-            legend: { position: "none" },
+            backgroundColor: "transparent", colors: ["#6FA9DF"], legend: { position: "none" },
             chartArea: { left: 48, top: 16, width: "92%", height: "72%" },
-            hAxis: {
-              title: "Dia",
-              textStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 },
-              titleTextStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 },
-              slantedText: false,
-              showTextEvery: days.length > 20 ? 2 : 1,
-              gridlines: { color: "transparent" }
-            },
-            vAxis: {
-              title: "Minutos",
-              minValue: 0,
-              format: "0",
-              textStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 },
-              titleTextStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 },
-              gridlines: { color: "#E6EBF2", count: 5 }
-            },
-            bar: { groupWidth: "58%" },
-            tooltip: { textStyle: { fontName: "Arial", fontSize: 12 } },
-            enableInteractivity: true
+            hAxis: { title: "Dia", textStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 }, titleTextStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 }, slantedText: false, showTextEvery: days.length > 20 ? 2 : 1, gridlines: { color: "transparent" } },
+            vAxis: { title: "Minutos", minValue: 0, format: "0", textStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 }, titleTextStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 }, gridlines: { color: "#E6EBF2", count: 5 } },
+            bar: { groupWidth: "58%" }, tooltip: { textStyle: { fontName: "Arial", fontSize: 12 } }, enableInteractivity: true
           });
         } catch (_) {}
       };
       ensureGoogleCharts().then(draw).catch(() => {});
     });
-
     return `<div class="home-month-chart-scroll"><div class="home-month-google-chart" id="${chartId}" role="img" aria-label="Tempo de treino por dia do mês"></div></div>`;
   }
 
@@ -149,39 +130,25 @@
     const data = buildMuscleData(workouts);
     const total = data.reduce((sum, item) => sum + item.value, 0);
     if (!total) return `<div class="home-chart-empty">Conclua um treino para visualizar a distribuição.</div>`;
-
     const chartId = `home-muscle-google-chart-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const legend = data.map((item, i) => {
       const percentage = Math.round((item.value / total) * 100);
       return `<div class="home-legend-row"><span class="home-legend-dot" style="background:${MUSCLE_PALETTE[i % MUSCLE_PALETTE.length]}"></span><span>${escapeHtml(item.label)}</span><strong>${percentage}%</strong></div>`;
     }).join("");
-
     requestAnimationFrame(() => {
       const draw = () => {
         try {
           const container = document.getElementById(chartId);
           if (!container || !window.google?.visualization?.PieChart) return;
           const table = new google.visualization.DataTable();
-          table.addColumn("string", "Grupo");
-          table.addColumn("number", "Exercícios");
-          table.addColumn({ type: "string", role: "tooltip" });
-          table.addRows(data.map(item => {
-            const percentage = Math.round((item.value / total) * 100);
-            return [`${percentage}%`, item.value, `${item.label}: ${item.value} exercícios`];
-          }));
+          table.addColumn("string", "Grupo"); table.addColumn("number", "Exercícios"); table.addColumn({ type: "string", role: "tooltip" });
+          table.addRows(data.map(item => { const percentage = Math.round((item.value / total) * 100); return [`${percentage}%`, item.value, `${item.label}: ${item.value} exercícios`]; }));
           const chart = new google.visualization.PieChart(container);
-          chart.draw(table, {
-            backgroundColor: "transparent", pieHole: 0.64, pieSliceText: "none", pieSliceBorderColor: "#FFFFFF",
-            colors: data.map((_, i) => MUSCLE_PALETTE[i % MUSCLE_PALETTE.length]),
-            legend: { position: "labeled", textStyle: { color: "#12233F", fontName: "Arial", fontSize: 13, bold: true } },
-            chartArea: { left: 4, top: 4, width: "92%", height: "92%" }, tooltip: { textStyle: { fontName: "Arial", fontSize: 12 } },
-            enableInteractivity: true, pieStartAngle: 0
-          });
+          chart.draw(table, { backgroundColor: "transparent", pieHole: 0.64, pieSliceText: "none", pieSliceBorderColor: "#FFFFFF", colors: data.map((_, i) => MUSCLE_PALETTE[i % MUSCLE_PALETTE.length]), legend: { position: "labeled", textStyle: { color: "#12233F", fontName: "Arial", fontSize: 13, bold: true } }, chartArea: { left: 4, top: 4, width: "92%", height: "92%" }, tooltip: { textStyle: { fontName: "Arial", fontSize: 12 } }, enableInteractivity: true, pieStartAngle: 0 });
         } catch (_) {}
       };
       ensureGoogleCharts().then(draw).catch(() => {});
     });
-
     return `<div class="home-google-donut-wrap"><div class="home-google-donut" id="${chartId}" role="img" aria-label="Distribuição de ${total} exercícios por grupo muscular"></div><div class="home-google-donut-center" aria-hidden="true"><strong>${total}</strong><span>exercícios</span></div></div><div class="home-muscle-legend">${legend}</div>`;
   }
 
@@ -189,21 +156,8 @@
     const safeTarget = Math.max(1, Number(weeklyTarget) || 1);
     const safeCount = Math.max(0, Number(weeklyCount) || 0);
     const progress = Math.min(100, Math.round((safeCount / safeTarget) * 100));
-    const radius = 92;
-    const circumference = Math.PI * radius;
-    const dash = Math.max(0, Math.min(circumference, circumference * (progress / 100)));
     const gaugeId = `home-weekly-progress-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-    return `<section class="home-gauge-card" aria-label="Meta semanal">
-      <div class="home-chart-head"><div><span class="eyebrow">META SEMANAL</span><h3>Treinos realizados</h3></div></div>
-      <div class="home-semicircle-wrap">
-        <svg class="home-semicircle" viewBox="0 0 220 125" role="img" aria-label="${safeCount} de ${safeTarget} treinos realizados nesta semana">
-          <path class="home-semicircle-track" d="M 18 110 A 92 92 0 0 1 202 110" pathLength="100"></path>
-          <path id="${gaugeId}" class="home-semicircle-progress" d="M 18 110 A 92 92 0 0 1 202 110" pathLength="100" style="stroke-dasharray:${progress} 100"></path>
-        </svg>
-        <div class="home-semicircle-caption"><strong>${safeCount} de ${safeTarget}</strong><span>${progress}%</span></div>
-      </div>
-    </section>`;
+    return `<section class="home-gauge-card" aria-label="Meta semanal"><div class="home-chart-head"><div><span class="eyebrow">META SEMANAL</span><h3>Treinos realizados</h3></div></div><div class="home-semicircle-wrap"><svg class="home-semicircle" viewBox="0 0 220 125" role="img" aria-label="${safeCount} de ${safeTarget} treinos realizados nesta semana"><path class="home-semicircle-track" d="M 18 110 A 92 92 0 0 1 202 110" pathLength="100"></path><path id="${gaugeId}" class="home-semicircle-progress" d="M 18 110 A 92 92 0 0 1 202 110" pathLength="100" style="stroke-dasharray:${progress} 100"></path></svg><div class="home-semicircle-caption"><strong>${safeCount} de ${safeTarget}</strong><span>${progress}%</span></div></div></section>`;
   }
 
   function renderHomeModern() {
@@ -212,12 +166,9 @@
     const stored = window.MeuTreinoStorage?.read?.({}) || {};
     const workouts = Array.isArray(stored.workouts) ? stored.workouts : [];
     const todayISO = typeof window.todayISO === "function" ? window.todayISO : () => new Date().toISOString().slice(0, 10);
-    const today = todayISO();
-    const month = today.slice(0, 7);
+    const today = todayISO(); const month = today.slice(0, 7);
     const weeklyTarget = Number(stored.settings?.weeklyGoal) || 4;
-    const weekStart = new Date(`${today}T12:00:00`);
-    const day = (weekStart.getDay() + 6) % 7;
-    weekStart.setDate(weekStart.getDate() - day);
+    const weekStart = new Date(`${today}T12:00:00`); const day = (weekStart.getDay() + 6) % 7; weekStart.setDate(weekStart.getDate() - day);
     const weekStartISO = `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, "0")}-${String(weekStart.getDate()).padStart(2, "0")}`;
     const weeklyCount = workouts.filter(w => w.date >= weekStartISO && w.date <= today).length;
     const monthCount = workouts.filter(w => String(w.date || "").startsWith(month)).length;
@@ -230,11 +181,10 @@
     window.layout(`
       <section class="home-modern-head"><div class="home-greeting-copy"><h2>Olá, ${escapeHtml(name || "!")}!</h2><p>Como está seu treino?</p></div></section>
       <section class="home-kpi-grid" aria-label="Indicadores do treino"><article class="home-kpi home-kpi-blue"><div><span>Treinos este mês</span><strong>${monthCount}</strong></div></article><article class="home-kpi home-kpi-green"><div><span>Tempo total</span><strong>${formatMinutes(totalTime)}</strong></div></article></section>
-      ${recent ? `<button class="home-recent-row" onclick="showWorkoutDetails('${escapeHtml(recent.id)}')"><span><small>ÚLTIMO TREINO</small><b>${escapeHtml(displayName(recent.type))}</b></span><span>${fmt(recent.totalTime || 0)} · ${recent.completedExercises || 0} exercícios</span></button>` : `<div class="home-empty-row"><span>Ainda não há treinos registrados.</span><button class="primary" onclick="go('trainings')">Começar um treino</button></div>`}
+      ${recent ? `<button class="home-recent-row" onclick="showWorkoutDetails('${escapeHtml(recent.id)}')"><span><small>Último Treino</small><b>${escapeHtml(displayName(recent.type))}</b></span><span>${fmt(recent.totalTime || 0)} · ${recent.completedExercises || 0} exercícios</span></button>` : `<div class="home-empty-row"><span>Ainda não há treinos registrados.</span><button class="primary" onclick="go('trainings')">Começar um treino</button></div>`}
       <section class="home-analysis-grid"><section class="home-chart-card home-distribution-card"><div class="home-chart-head"><div><span class="eyebrow">DISTRIBUIÇÃO</span><h3>Exercícios por grupo muscular</h3></div></div><div class="home-muscle-chart">${renderMuscleChart(workouts)}</div></section>${renderWeeklyGauge(weeklyCount, weeklyTarget)}</section>
       <section class="home-chart-card home-activity-card"><div class="home-chart-head home-activity-head"><div><span class="eyebrow">ATIVIDADE</span><h3>Tempo de treino por dia do mês</h3></div></div>${renderMonthChart(workouts, month)}</section>
     `, "home");
-
     const homeTopbar = document.querySelector(".topbar");
     if (homeTopbar) homeTopbar.style.display = "none";
   }
