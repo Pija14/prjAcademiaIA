@@ -4,6 +4,12 @@
 .home-kpi-grid .home-recent-row span{width:100%;min-width:0;text-align:center}
 .home-kpi-grid .home-recent-row small{display:block;font-family:"Roboto",sans-serif;font-size:12px;line-height:1.2;letter-spacing:0;color:var(--ink-soft);font-weight:600;margin:0 0 7px;text-transform:none;text-align:center}
 .home-kpi-grid .home-recent-row b{display:block;width:100%;font-family:"Roboto",sans-serif;font-size:clamp(18px,4.8vw,25px);line-height:1.08;color:var(--ink-strong);font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:none;text-align:center}
+.home-distribution-card .home-chart-head{margin-bottom:8px}
+.home-distribution-card .home-chart-head h3{margin:0;font-size:16px;font-weight:800;line-height:1.25;text-transform:none}
+.home-google-donut-wrap{position:relative}
+.home-donut-callouts{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:2}
+.home-donut-callout-line{fill:none;stroke:#60708A;stroke-width:.45;stroke-linecap:round;stroke-linejoin:round}
+.home-donut-callout-text{font-family:"Roboto",sans-serif;font-size:4px;font-weight:700;fill:#12233F}
 @media (max-width:520px){
   .home-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
   .home-kpi-grid .home-recent-row{min-height:102px;padding:13px 7px;border-radius:16px;gap:0}
@@ -12,4 +18,6 @@
   .home-kpi{min-height:102px;padding:13px 7px}
   .home-kpi strong{font-size:20px}
   .home-kpi div>span{font-size:9px}
+  .home-distribution-card .home-chart-head h3{font-size:16px}
+  .home-donut-callout-text{font-size:4.3px}
 }
