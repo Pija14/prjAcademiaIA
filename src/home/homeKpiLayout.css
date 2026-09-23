@@ -8,7 +8,7 @@
   .home-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
   .home-kpi-grid .home-recent-row{min-height:102px;padding:13px 7px;border-radius:16px;gap:0}
   .home-kpi-grid .home-recent-row small{font-size:9px;margin-bottom:5px}
-  .home-kpi-grid .home-recent-row b{font-size:clamp(14px,5.2vw,19px);line-height:1.08}
+  .home-kpi-grid .home-recent-row b{font-size:12px;line-height:1.08}
   .home-kpi{min-height:102px;padding:13px 7px}
   .home-kpi strong{font-size:20px}
   .home-kpi div>span{font-size:9px}
