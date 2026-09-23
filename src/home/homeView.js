@@ -155,7 +155,7 @@
     const safeCount = Math.max(0, Number(weeklyCount) || 0);
     const progress = Math.min(100, Math.round((safeCount / safeTarget) * 100));
     const gaugeId = `home-weekly-progress-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    return `<section class="home-gauge-card" aria-label="Meta semanal"><div class="home-chart-head"><div><div class="eyebrow">META SEMANAL</div><h3>Treinos realizados</h3></div></div><div class="home-semicircle-wrap"><svg class="home-semicircle" viewBox="0 0 220 125" role="img" aria-label="${safeCount} de ${safeTarget} treinos realizados nesta semana"><path class="home-semicircle-track" d="M 18 110 A 92 92 0 0 1 202 110" pathLength="100"></path><path id="${gaugeId}" class="home-semicircle-progress" d="M 18 110 A 92 92 0 0 1 202 110" pathLength="100" style="stroke-dasharray:${progress} 100"></path></svg><div class="home-semicircle-caption"><strong>${safeCount} de ${safeTarget}</strong><span>${progress}%</span></div></div></section>`;
+    return `<section class="home-gauge-card" aria-label="Meta semanal"><div class="home-chart-head"><div><h3>Meta Semanal</h3></div></div><div class="home-semicircle-wrap"><svg class="home-semicircle" viewBox="0 0 220 125" role="img" aria-label="${safeCount} de ${safeTarget} treinos realizados nesta semana"><path class="home-semicircle-track" d="M 18 110 A 92 92 0 0 1 202 110" pathLength="100"></path><path id="${gaugeId}" class="home-semicircle-progress" d="M 18 110 A 92 92 0 0 1 202 110" pathLength="100" style="stroke-dasharray:${progress} 100"></path></svg><div class="home-semicircle-caption"><strong>${safeCount} de ${safeTarget}</strong><span>${progress}%</span></div></div></section>`;
   }
 
   function renderHomeModern() {
@@ -180,7 +180,7 @@
       <section class="home-kpi-grid" aria-label="Indicadores do treino"><article class="home-kpi home-kpi-blue"><div><span>Treinos este mês</span><strong>${monthCount}</strong></div></article><article class="home-kpi home-kpi-green"><div><span>Tempo total</span><strong>${formatMinutes(totalTime)}</strong></div></article>
       ${recent ? `<button class="home-recent-row" onclick="showWorkoutDetails('${escapeHtml(recent.id)}')"><span><small>Último Treino</small><b>${escapeHtml(displayName(recent.type))}</b></span></button>` : `<div class="home-empty-row"><span>Ainda não há treinos registrados.</span><button class="primary" onclick="go('trainings')">Começar um treino</button></div>`}</section>
       <section class="home-analysis-grid"><section class="home-chart-card home-distribution-card"><div class="home-chart-head"><div><h3>Distribuição por Grupo Muscular</h3></div></div><div class="home-muscle-chart">${renderMuscleChart(workouts)}</div></section>${renderWeeklyGauge(weeklyCount, weeklyTarget)}</section>
-      <section class="home-chart-card home-activity-card"><div class="home-chart-head home-activity-head"><div><span class="eyebrow">ATIVIDADE</span><h3>Tempo de treino por dia do mês</h3></div></div>${renderMonthChart(workouts, month)}</section>
+      <section class="home-chart-card home-activity-card"><div class="home-chart-head home-activity-head"><div><h3>Atividade</h3></div></div>${renderMonthChart(workouts, month)}</section>
     `, "home");
     const homeTopbar = document.querySelector(".topbar");
     if (homeTopbar) homeTopbar.style.display = "none";
