@@ -4,8 +4,6 @@
 .home-kpi-grid .home-recent-row span{width:100%;min-width:0}
 .home-kpi-grid .home-recent-row small{display:block;font-family:"Roboto",sans-serif;font-size:12px;line-height:1.2;letter-spacing:0;color:var(--ink-soft);font-weight:600;margin:0 0 7px;text-transform:none}
 .home-kpi-grid .home-recent-row b{display:block;width:100%;font-family:"Roboto",sans-serif;font-size:clamp(18px,4.8vw,25px);line-height:1.08;color:var(--ink-strong);font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:none}
-/* O detalhe de duração não faz parte do resumo visual do card. */
-.home-kpi-grid .home-recent-row span:last-child{display:none}
 @media (max-width:520px){
   .home-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
   .home-kpi-grid .home-recent-row{min-height:102px;padding:13px 7px;border-radius:16px;gap:0}
