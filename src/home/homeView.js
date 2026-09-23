@@ -23,10 +23,7 @@
     googleChartsPromise = new Promise((resolve, reject) => {
       const finish = () => {
         try {
-          if (!window.google?.charts?.load || !window.google?.charts?.setOnLoadCallback) {
-            reject(new Error("Google Charts indisponível"));
-            return;
-          }
+          if (!window.google?.charts?.load || !window.google?.charts?.setOnLoadCallback) { reject(new Error("Google Charts indisponível")); return; }
           window.google.charts.load("current", { packages: ["corechart"] });
           window.google.charts.setOnLoadCallback(resolve);
         } catch (error) { reject(error); }
@@ -97,28 +94,16 @@
   function renderMonthChart(workouts, month) {
     const { days, values } = buildMonthData(workouts, month);
     const chartId = `home-month-google-chart-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
     requestAnimationFrame(() => {
       const draw = () => {
         try {
           const container = document.getElementById(chartId);
           if (!container || !window.google?.visualization?.ColumnChart) return;
           const table = new google.visualization.DataTable();
-          table.addColumn("string", "Dia");
-          table.addColumn("number", "Minutos");
-          table.addColumn({ type: "string", role: "tooltip" });
-          table.addRows(days.map((day, i) => {
-            const minutes = Math.round(Math.max(0, Number(values[i]) || 0) / 60);
-            return [String(day), minutes, `${day}: ${formatMinutes(values[i])}`];
-          }));
+          table.addColumn("string", "Dia"); table.addColumn("number", "Minutos"); table.addColumn({ type: "string", role: "tooltip" });
+          table.addRows(days.map((day, i) => { const minutes = Math.round(Math.max(0, Number(values[i]) || 0) / 60); return [String(day), minutes, `${day}: ${formatMinutes(values[i])}`]; }));
           const chart = new google.visualization.ColumnChart(container);
-          chart.draw(table, {
-            backgroundColor: "transparent", colors: ["#6FA9DF"], legend: { position: "none" },
-            chartArea: { left: 48, top: 16, width: "92%", height: "72%" },
-            hAxis: { title: "Dia", textStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 }, titleTextStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 }, slantedText: false, showTextEvery: days.length > 20 ? 2 : 1, gridlines: { color: "transparent" } },
-            vAxis: { title: "Minutos", minValue: 0, format: "0", textStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 }, titleTextStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 }, gridlines: { color: "#E6EBF2", count: 5 } },
-            bar: { groupWidth: "58%" }, tooltip: { textStyle: { fontName: "Arial", fontSize: 12 } }, enableInteractivity: true
-          });
+          chart.draw(table, { backgroundColor: "transparent", colors: ["#6FA9DF"], legend: { position: "none" }, chartArea: { left: 48, top: 16, width: "92%", height: "72%" }, hAxis: { title: "Dia", textStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 }, titleTextStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 }, slantedText: false, showTextEvery: days.length > 20 ? 2 : 1, gridlines: { color: "transparent" } }, vAxis: { title: "Minutos", minValue: 0, format: "0", textStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 }, titleTextStyle: { color: "#60708A", fontName: "Arial", fontSize: 11 }, gridlines: { color: "#E6EBF2", count: 5 } }, bar: { groupWidth: "58%" }, tooltip: { textStyle: { fontName: "Arial", fontSize: 12 } }, enableInteractivity: true });
         } catch (_) {}
       };
       ensureGoogleCharts().then(draw).catch(() => {});
@@ -131,10 +116,7 @@
     const total = data.reduce((sum, item) => sum + item.value, 0);
     if (!total) return `<div class="home-chart-empty">Conclua um treino para visualizar a distribuição.</div>`;
     const chartId = `home-muscle-google-chart-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const legend = data.map((item, i) => {
-      const percentage = Math.round((item.value / total) * 100);
-      return `<div class="home-legend-row"><span class="home-legend-dot" style="background:${MUSCLE_PALETTE[i % MUSCLE_PALETTE.length]}"></span><span>${escapeHtml(item.label)}</span><strong>${percentage}%</strong></div>`;
-    }).join("");
+    const legend = data.map((item, i) => { const percentage = Math.round((item.value / total) * 100); return `<div class="home-legend-row"><span class="home-legend-dot" style="background:${MUSCLE_PALETTE[i % MUSCLE_PALETTE.length]}"></span><span>${escapeHtml(item.label)}</span><strong>${percentage}%</strong></div>`; }).join("");
     requestAnimationFrame(() => {
       const draw = () => {
         try {
@@ -175,13 +157,12 @@
     const totalTime = workouts.reduce((sum, w) => sum + (Number(w.totalTime) || 0), 0);
     const recent = workouts[workouts.length - 1] || null;
     const displayName = typeof window.f2DisplayName === "function" ? window.f2DisplayName : value => String(value || "");
-    const fmt = typeof window.fmt === "function" ? window.fmt : formatMinutes;
     const name = String(user?.name || "").trim();
 
     window.layout(`
       <section class="home-modern-head"><div class="home-greeting-copy"><h2>Olá, ${escapeHtml(name || "!")}!</h2><p>Como está seu treino?</p></div></section>
-      <section class="home-kpi-grid" aria-label="Indicadores do treino"><article class="home-kpi home-kpi-blue"><div><span>Treinos este mês</span><strong>${monthCount}</strong></div></article><article class="home-kpi home-kpi-green"><div><span>Tempo total</span><strong>${formatMinutes(totalTime)}</strong></div></article></section>
-      ${recent ? `<button class="home-recent-row" onclick="showWorkoutDetails('${escapeHtml(recent.id)}')"><span><small>Último Treino</small><b>${escapeHtml(displayName(recent.type))}</b></span><span>${fmt(recent.totalTime || 0)} · ${recent.completedExercises || 0} exercícios</span></button>` : `<div class="home-empty-row"><span>Ainda não há treinos registrados.</span><button class="primary" onclick="go('trainings')">Começar um treino</button></div>`}
+      <section class="home-kpi-grid" aria-label="Indicadores do treino"><article class="home-kpi home-kpi-blue"><div><span>Treinos este mês</span><strong>${monthCount}</strong></div></article><article class="home-kpi home-kpi-green"><div><span>Tempo total</span><strong>${formatMinutes(totalTime)}</strong></div></article>
+      ${recent ? `<button class="home-recent-row" onclick="showWorkoutDetails('${escapeHtml(recent.id)}')"><span><small>Último Treino</small><b>${escapeHtml(displayName(recent.type))}</b></span></button>` : `<div class="home-empty-row"><span>Ainda não há treinos registrados.</span><button class="primary" onclick="go('trainings')">Começar um treino</button></div>`}</section>
       <section class="home-analysis-grid"><section class="home-chart-card home-distribution-card"><div class="home-chart-head"><div><span class="eyebrow">DISTRIBUIÇÃO</span><h3>Exercícios por grupo muscular</h3></div></div><div class="home-muscle-chart">${renderMuscleChart(workouts)}</div></section>${renderWeeklyGauge(weeklyCount, weeklyTarget)}</section>
       <section class="home-chart-card home-activity-card"><div class="home-chart-head home-activity-head"><div><span class="eyebrow">ATIVIDADE</span><h3>Tempo de treino por dia do mês</h3></div></div>${renderMonthChart(workouts, month)}</section>
     `, "home");
