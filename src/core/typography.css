@@ -1,0 +1,23 @@
+/* Meu Treino — tipografia global */
+html,
+body,
+button,
+input,
+select,
+textarea,
+a,
+label,
+small,
+strong,
+b,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+div {
+  font-family: "Roboto", sans-serif !important;
+}
