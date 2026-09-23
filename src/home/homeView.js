@@ -116,7 +116,21 @@
     const total = data.reduce((sum, item) => sum + item.value, 0);
     if (!total) return `<div class="home-chart-empty">Conclua um treino para visualizar a distribuição.</div>`;
     const chartId = `home-muscle-google-chart-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const legend = data.map((item, i) => { const percentage = Math.round((item.value / total) * 100); return `<div class="home-legend-row"><span class="home-legend-dot" style="background:${MUSCLE_PALETTE[i % MUSCLE_PALETTE.length]}"></span><span>${escapeHtml(item.label)}</span><strong>${percentage}%</strong></div>`; }).join("");
+    const calloutId = `home-muscle-callouts-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const callouts = data.map((item, i) => {
+      const start = data.slice(0, i).reduce((sum, current) => sum + current.value, 0);
+      const angle = ((start + item.value / 2) / total) * Math.PI * 2 - Math.PI / 2;
+      const x1 = 50 + Math.cos(angle) * 31;
+      const y1 = 50 + Math.sin(angle) * 31;
+      const x2 = 50 + Math.cos(angle) * 39;
+      const y2 = 50 + Math.sin(angle) * 39;
+      const side = Math.cos(angle) >= 0 ? 1 : -1;
+      const x3 = x2 + side * 8;
+      const y3 = y2;
+      const percentage = Math.round((item.value / total) * 100);
+      const anchor = side > 0 ? "start" : "end";
+      return `<path class="home-donut-callout-line" d="M ${x1.toFixed(2)} ${y1.toFixed(2)} L ${x2.toFixed(2)} ${y2.toFixed(2)} L ${x3.toFixed(2)} ${y3.toFixed(2)}"></path><text class="home-donut-callout-text" x="${(x3 + side * 2).toFixed(2)}" y="${(y3 - 1).toFixed(2)}" text-anchor="${anchor}">${percentage}%</text>`;
+    }).join("");
     requestAnimationFrame(() => {
       const draw = () => {
         try {
@@ -131,7 +145,7 @@
       };
       ensureGoogleCharts().then(draw).catch(() => {});
     });
-    return `<div class="home-google-donut-wrap"><div class="home-google-donut" id="${chartId}" role="img" aria-label="Distribuição de ${total} exercícios por grupo muscular"></div><div class="home-google-donut-center" aria-hidden="true"><strong>${total}</strong><span>exercícios</span></div></div><div class="home-muscle-legend">${legend}</div>`;
+    return `<div class="home-google-donut-wrap"><div class="home-google-donut" id="${chartId}" role="img" aria-label="Distribuição de ${total} exercícios por grupo muscular"></div><svg id="${calloutId}" class="home-donut-callouts" viewBox="0 0 100 100" aria-hidden="true">${callouts}</svg><div class="home-google-donut-center" aria-hidden="true"><strong>${total}</strong><span>exercícios</span></div></div>`;
   }
 
   function renderWeeklyGauge(weeklyCount, weeklyTarget) {
@@ -139,7 +153,7 @@
     const safeCount = Math.max(0, Number(weeklyCount) || 0);
     const progress = Math.min(100, Math.round((safeCount / safeTarget) * 100));
     const gaugeId = `home-weekly-progress-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    return `<section class="home-gauge-card" aria-label="Meta semanal"><div class="home-chart-head"><div><span class="eyebrow">META SEMANAL</span><h3>Treinos realizados</h3></div></div><div class="home-semicircle-wrap"><svg class="home-semicircle" viewBox="0 0 220 125" role="img" aria-label="${safeCount} de ${safeTarget} treinos realizados nesta semana"><path class="home-semicircle-track" d="M 18 110 A 92 92 0 0 1 202 110" pathLength="100"></path><path id="${gaugeId}" class="home-semicircle-progress" d="M 18 110 A 92 92 0 0 1 202 110" pathLength="100" style="stroke-dasharray:${progress} 100"></path></svg><div class="home-semicircle-caption"><strong>${safeCount} de ${safeTarget}</strong><span>${progress}%</span></div></div></section>`;
+    return `<section class="home-gauge-card" aria-label="Meta semanal"><div class="home-chart-head"><div><div class="eyebrow">META SEMANAL</div><h3>Treinos realizados</h3></div></div><div class="home-semicircle-wrap"><svg class="home-semicircle" viewBox="0 0 220 125" role="img" aria-label="${safeCount} de ${safeTarget} treinos realizados nesta semana"><path class="home-semicircle-track" d="M 18 110 A 92 92 0 0 1 202 110" pathLength="100"></path><path id="${gaugeId}" class="home-semicircle-progress" d="M 18 110 A 92 92 0 0 1 202 110" pathLength="100" style="stroke-dasharray:${progress} 100"></path></svg><div class="home-semicircle-caption"><strong>${safeCount} de ${safeTarget}</strong><span>${progress}%</span></div></div></section>`;
   }
 
   function renderHomeModern() {
@@ -163,7 +177,7 @@
       <section class="home-modern-head"><div class="home-greeting-copy"><h2>Olá, ${escapeHtml(name || "!")}!</h2><p>Como está seu treino?</p></div></section>
       <section class="home-kpi-grid" aria-label="Indicadores do treino"><article class="home-kpi home-kpi-blue"><div><span>Treinos este mês</span><strong>${monthCount}</strong></div></article><article class="home-kpi home-kpi-green"><div><span>Tempo total</span><strong>${formatMinutes(totalTime)}</strong></div></article>
       ${recent ? `<button class="home-recent-row" onclick="showWorkoutDetails('${escapeHtml(recent.id)}')"><span><small>Último Treino</small><b>${escapeHtml(displayName(recent.type))}</b></span></button>` : `<div class="home-empty-row"><span>Ainda não há treinos registrados.</span><button class="primary" onclick="go('trainings')">Começar um treino</button></div>`}</section>
-      <section class="home-analysis-grid"><section class="home-chart-card home-distribution-card"><div class="home-chart-head"><div><span class="eyebrow">DISTRIBUIÇÃO</span><h3>Exercícios por grupo muscular</h3></div></div><div class="home-muscle-chart">${renderMuscleChart(workouts)}</div></section>${renderWeeklyGauge(weeklyCount, weeklyTarget)}</section>
+      <section class="home-analysis-grid"><section class="home-chart-card home-distribution-card"><div class="home-chart-head"><div><h3>Distribuição por Grupo Muscular</h3></div></div><div class="home-muscle-chart">${renderMuscleChart(workouts)}</div></section>${renderWeeklyGauge(weeklyCount, weeklyTarget)}</section>
       <section class="home-chart-card home-activity-card"><div class="home-chart-head home-activity-head"><div><span class="eyebrow">ATIVIDADE</span><h3>Tempo de treino por dia do mês</h3></div></div>${renderMonthChart(workouts, month)}</section>
     `, "home");
     const homeTopbar = document.querySelector(".topbar");
