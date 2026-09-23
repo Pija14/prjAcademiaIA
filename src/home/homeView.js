@@ -89,7 +89,7 @@
     return ordered;
   }
 
-  const MUSCLE_PALETTE = ["#E88B8B", "#E9A15F", "#E9C65B", "#72C49A", "#6FA9DF", "#9388D2", "#B58FD0"];
+  const MUSCLE_PALETTE = ["#E86F6A", "#F39A3D", "#F6C344", "#6BC79A", "#5B9BE8", "#8D82E8", "#B48AD0"];
 
   function renderMonthChart(workouts, month) {
     const { days, values } = buildMonthData(workouts, month);
@@ -124,9 +124,9 @@
           if (!container || !window.google?.visualization?.PieChart) return;
           const table = new google.visualization.DataTable();
           table.addColumn("string", "Grupo"); table.addColumn("number", "Exercícios"); table.addColumn({ type: "string", role: "tooltip" });
-          table.addRows(data.map(item => { const percentage = Math.round((item.value / total) * 100); return [`${percentage}%`, item.value, `${item.label}: ${item.value} exercícios`]; }));
+          table.addRows(data.map(item => [item.label, item.value, `${item.label}: ${item.value} exercícios`]));
           const chart = new google.visualization.PieChart(container);
-          chart.draw(table, { backgroundColor: "transparent", pieHole: 0.64, pieSliceText: "none", pieSliceBorderColor: "#FFFFFF", colors: data.map((_, i) => MUSCLE_PALETTE[i % MUSCLE_PALETTE.length]), legend: { position: "labeled", textStyle: { color: "#12233F", fontName: "Arial", fontSize: 13, bold: true } }, chartArea: { left: 4, top: 4, width: "92%", height: "92%" }, tooltip: { textStyle: { fontName: "Arial", fontSize: 12 } }, enableInteractivity: true, pieStartAngle: 0 });
+          chart.draw(table, { backgroundColor: "transparent", pieHole: 0.64, pieSliceText: "none", pieSliceBorderColor: "#FFFFFF", colors: data.map((_, i) => MUSCLE_PALETTE[i % MUSCLE_PALETTE.length]), legend: { position: "none" }, chartArea: { left: 4, top: 4, width: "92%", height: "92%" }, tooltip: { textStyle: { fontName: "Arial", fontSize: 12 } }, enableInteractivity: true, pieStartAngle: 0 });
         } catch (_) {}
       };
       ensureGoogleCharts().then(draw).catch(() => {});
