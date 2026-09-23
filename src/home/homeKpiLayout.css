@@ -1,0 +1,17 @@
+/* Home — layout dos três cards superiores */
+.home-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.home-kpi-grid .home-recent-row{width:auto;min-height:108px;margin:0;padding:15px 14px;border-radius:18px;align-items:center;justify-content:center;text-align:center;box-sizing:border-box;display:flex;flex-direction:column;gap:7px}
+.home-kpi-grid .home-recent-row span{width:100%;min-width:0}
+.home-kpi-grid .home-recent-row span:last-child{text-align:center;white-space:normal;font-size:11px}
+.home-kpi-grid .home-recent-row small{font-size:9px;margin:0}
+.home-kpi-grid .home-recent-row b{font-size:13px;white-space:nowrap}
+@media (max-width:520px){
+  .home-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+  .home-kpi-grid .home-recent-row{min-height:102px;padding:13px 7px;border-radius:16px;gap:5px}
+  .home-kpi-grid .home-recent-row small{font-size:7px;letter-spacing:.06em}
+  .home-kpi-grid .home-recent-row b{font-size:10px}
+  .home-kpi-grid .home-recent-row span:last-child{font-size:8px;line-height:1.2}
+  .home-kpi{min-height:102px;padding:13px 7px}
+  .home-kpi strong{font-size:20px}
+  .home-kpi div>span{font-size:9px}
+}
