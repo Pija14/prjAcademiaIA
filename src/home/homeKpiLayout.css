@@ -9,6 +9,8 @@
 .home-gauge-card .home-chart-head .eyebrow{display:none}
 .home-gauge-card .home-chart-head h3{margin:0;font-family:"Roboto",sans-serif;font-size:0;font-weight:800;line-height:1.25;text-transform:none}
 .home-gauge-card .home-chart-head h3::after{content:"Meta Semanal";font-size:16px;font-weight:800}
+.home-activity-card .home-activity-head{margin-bottom:8px}
+.home-activity-card .home-activity-head h3{margin:0;font-family:"Roboto",sans-serif;font-size:16px;font-weight:800;line-height:1.25;text-transform:none}
 .home-google-donut-wrap{position:relative;min-height:260px}
 .home-donut-callouts{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:2}
 .home-donut-callout-line{fill:none;stroke-width:.65;stroke-linecap:round;stroke-linejoin:round}
@@ -28,6 +30,7 @@
   .home-kpi div>span{font-size:9px}
   .home-distribution-card .home-chart-head h3{font-size:16px}
   .home-gauge-card .home-chart-head h3::after{font-size:16px}
+  .home-activity-card .home-activity-head h3{font-size:16px}
   .home-google-donut-wrap{min-height:220px}
   .home-donut-callout-text{font-size:4.3px}
   .home-donut-legend{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 10px;margin-left:2px;margin-right:2px}
