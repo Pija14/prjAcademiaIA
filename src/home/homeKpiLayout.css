@@ -11,15 +11,26 @@
 .home-gauge-card .home-chart-head h3::after{content:"Meta Semanal";font-size:16px;font-weight:800}
 .home-activity-card .home-activity-head{margin-bottom:8px}
 .home-activity-card .home-activity-head h3{margin:0;font-family:"Roboto",sans-serif;font-size:16px;font-weight:800;line-height:1.25;text-transform:none}
-.home-google-donut-wrap{position:relative;min-height:260px}
+
+/* Donut — escala visual baseada em Material Design: área útil ampla, centro legível e respiro consistente. */
+.home-google-donut-wrap{position:relative;min-height:292px;display:flex;align-items:center;justify-content:center;overflow:visible}
+.home-google-donut{width:100%;height:292px;min-width:0}
 .home-donut-callouts{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:2}
 .home-donut-callout-line{fill:none;stroke-width:.65;stroke-linecap:round;stroke-linejoin:round}
 .home-donut-callout-text{font-family:"Roboto",sans-serif;font-size:4px;font-weight:800;fill:#12233F}
+.home-google-donut-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;z-index:3;line-height:1.05}
+.home-google-donut-center strong{font-family:"Roboto",sans-serif;font-size:25px;font-weight:700;color:#12233F;letter-spacing:-.3px}
+.home-google-donut-center span{margin-top:3px;font-family:"Roboto",sans-serif;font-size:11px;font-weight:500;color:#60708A}
 .home-donut-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 18px;margin:4px 8px 2px}
 .home-donut-legend-item{display:flex;align-items:center;gap:7px;min-width:0;font-family:"Roboto",sans-serif;font-size:12px;color:#40516B;line-height:1.25;white-space:nowrap}
 .home-donut-legend-dot{width:10px;height:10px;border-radius:50%;flex:0 0 10px}
 .home-donut-legend-item span:nth-child(2){overflow:hidden;text-overflow:ellipsis}
 .home-donut-legend-item b{font-weight:700;color:#40516B;margin-left:auto}
+@media (max-width:720px){
+  .home-google-donut-wrap{min-height:258px}
+  .home-google-donut{height:258px}
+  .home-google-donut-center strong{font-size:23px}
+}
 @media (max-width:520px){
   .home-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
   .home-kpi-grid .home-recent-row{min-height:102px;padding:13px 7px;border-radius:16px;gap:0}
@@ -31,8 +42,11 @@
   .home-distribution-card .home-chart-head h3{font-size:16px}
   .home-gauge-card .home-chart-head h3::after{font-size:16px}
   .home-activity-card .home-activity-head h3{font-size:16px}
-  .home-google-donut-wrap{min-height:220px}
+  .home-google-donut-wrap{min-height:228px}
+  .home-google-donut{height:228px}
   .home-donut-callout-text{font-size:4.3px}
+  .home-google-donut-center strong{font-size:21px}
+  .home-google-donut-center span{font-size:10px}
   .home-donut-legend{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 10px;margin-left:2px;margin-right:2px}
   .home-donut-legend-item{font-size:10px;gap:5px}
   .home-donut-legend-dot{width:9px;height:9px;flex-basis:9px}
