@@ -1,5 +1,6 @@
 name: Deploy Meu Treino to GitHub Pages
 
+# Trigger GitHub Pages deployment
 on:
   push:
     branches: [refactor/arquitetura-modular]
