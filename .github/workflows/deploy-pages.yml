@@ -1,6 +1,7 @@
 name: Deploy Meu Treino to GitHub Pages
 
 # Trigger GitHub Pages deployment
+# Branch Google Design System: deploy automatically on every push.
 on:
   push:
     branches: [refactor/arquitetura-modular, tela-inicial-google-design-system]
