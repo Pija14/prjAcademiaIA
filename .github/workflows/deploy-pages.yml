@@ -3,7 +3,7 @@ name: Deploy Meu Treino to GitHub Pages
 # Trigger GitHub Pages deployment
 on:
   push:
-    branches: [refactor/arquitetura-modular]
+    branches: [refactor/arquitetura-modular, tela-inicial-google-design-system]
   workflow_dispatch:
 
 permissions:
