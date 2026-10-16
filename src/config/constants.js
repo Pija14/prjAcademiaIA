@@ -1,4 +1,4 @@
-export const APP_VERSION = "v59";
+export const APP_VERSION = "v60";
 
 export const DEFAULT_EXERCISE_SECONDS = 60;
 
@@ -25,6 +25,9 @@ export const DEFAULTS = {
 export const AUTH_TIMEOUT_MS=90000;
 
 export const AUTH_SLOW_HINT_MS=6000;
+
+// Ao abrir o app com sessão salva: tempo máximo esperando o servidor antes de seguir com os dados do aparelho.
+export const SESSION_CHECK_TIMEOUT_MS=20000;
 
 export const GOOGLE_GSI_SRC="https://accounts.google.com/gsi/client";
 

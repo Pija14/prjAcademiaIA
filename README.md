@@ -1,3 +1,10 @@
+## v60 — Inicialização sem tela branca e uso sem conexão
+
+- Tela de carregamento exibida imediatamente ao abrir o app, enquanto a sessão é verificada (o servidor gratuito pode levar cerca de 1 minuto para acordar).
+- Verificação da sessão com tempo limite de 20 s; sem conexão (ou servidor fora do ar) o app abre com os dados salvos no aparelho, em vez de deslogar. Só um token rejeitado (401/403) leva ao login.
+- Service worker: páginas buscadas primeiro na rede (cache só sem internet), `skipWaiting` + `clients.claim` para a versão nova assumir na hora, e recarga automática quando ela assume — exceto durante um treino em andamento.
+- `app.js` de compatibilidade: instalações antigas que ainda tinham o `index.html` anterior em cache carregam o app novo.
+
 ## v59 — Frontend reorganizado em MVC (módulos ES)
 
 O `app.js` único (~2.300 linhas) foi dividido em 41 módulos ES nativos organizados em MVC, sem build. Decisão e alternativas em [`docs/adr/0001-frontend-mvc-com-modulos-es.md`](docs/adr/0001-frontend-mvc-com-modulos-es.md).

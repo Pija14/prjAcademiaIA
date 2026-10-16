@@ -29,7 +29,7 @@ jobs:
           AI_API_URL: ${{ vars.AI_API_URL || 'https://prjacademiaia.onrender.com' }}
         run: |
           mkdir public
-          cp index.html styles.css manifest.json icon.svg sw.js public/
+          cp index.html app.js styles.css manifest.json icon.svg sw.js public/
           cp -R src public/src
           cp -R icons public/icons
           printf 'window.MEU_TREINO_CONFIG = { AI_API_URL: "%s" };\n' "$AI_API_URL" > public/config.js

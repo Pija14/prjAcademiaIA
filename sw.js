@@ -1,4 +1,4 @@
-const CACHE = "meu-treino-v59";
+const CACHE = "meu-treino-v60";
 // Todos os arquivos do app (inclusive cada módulo em src/) precisam estar aqui para o modo offline.
 // Ao criar um módulo novo, adicione-o a esta lista e incremente CACHE.
 const ASSETS = [
@@ -46,11 +46,26 @@ const ASSETS = [
   "./src/views/workoutView.js",
 ];
 // cache: "reload" evita gravar no cache do SW uma versão antiga vinda do cache HTTP do navegador.
-self.addEventListener("install", e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS.map(url => new Request(url, { cache: "reload" }))))));
-self.addEventListener("activate", e => e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))));
+// skipWaiting/clients.claim: a versão nova assume na hora, sem esperar o app ser fechado.
+self.addEventListener("install", e => {
+  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS.map(url => new Request(url, { cache: "reload" })))));
+});
+self.addEventListener("activate", e => e.waitUntil(
+  caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())
+));
 self.addEventListener("fetch", e => {
   // AI requests go to a separate backend and must never be cached by the PWA.
   if (new URL(e.request.url).origin !== self.location.origin) return;
-  // ignoreSearch: "styles.css?v=59" e "src/main.js?v=59" correspondem às entradas sem query string.
+  // Páginas (HTML): rede primeiro, para nunca ficar preso a um index.html antigo; cache só sem internet.
+  if (e.request.mode === "navigate") {
+    e.respondWith(
+      fetch(e.request)
+        .then(response => { const copy = response.clone(); caches.open(CACHE).then(c => c.put("./index.html", copy)); return response; })
+        .catch(() => caches.match("./index.html"))
+    );
+    return;
+  }
+  // Demais arquivos: cache primeiro. ignoreSearch: "styles.css?v=60" corresponde à entrada sem query string.
   e.respondWith(caches.match(e.request, { ignoreSearch: true }).then(cached => cached || fetch(e.request)));
 });

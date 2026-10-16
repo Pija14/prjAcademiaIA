@@ -5,7 +5,8 @@ import { apiConfigured } from "../models/api.js";
 import { loadGoogleConfig, loginAccount, loginWithGoogleCredential, registerAccount, restoreSession, signOut } from "../models/authModel.js";
 import { abandonSession } from "../models/workoutSession.js";
 import { normalizeEmail } from "../utils/format.js";
-import { authMessageContentView, authView, googleFallbackButtonView } from "../views/authView.js";
+import { authMessageContentView, authView, googleFallbackButtonView, splashView } from "../views/authView.js";
+import { showSnackbar } from "../views/components/snackbar.js";
 import { setFieldError } from "../views/components/fields.js";
 import { mdIcon } from "../views/components/icons.js";
 
@@ -227,7 +228,13 @@ export async function logoutUser(){
 // Sessão expirada (401 durante a sincronização): volta para o login.
 export function handleSessionExpired(){ renderAuthScreen(); }
 
+// Início do app: mostra a tela de carregamento na hora (nunca uma tela em branco enquanto o servidor acorda)
+// e, sem conexão, abre com os dados salvos no aparelho em vez de deslogar.
 export async function bootApp(){
-  if(await restoreSession()) renderHome();
+  const app=document.getElementById("app");
+  if(app) app.innerHTML=splashView();
+  const result=await restoreSession();
+  if(result==="online") renderHome();
+  else if(result==="offline"){ renderHome(); showSnackbar("Sem conexão com o servidor. Mostrando os dados salvos neste aparelho."); }
   else renderAuthScreen();
 }

@@ -1,7 +1,7 @@
-import { AUTH_TIMEOUT_MS } from "../config/constants.js";
+import { AUTH_TIMEOUT_MS, SESSION_CHECK_TIMEOUT_MS } from "../config/constants.js";
 import { apiConfigured, apiRequest } from "./api.js";
 import { getAccessToken, setAccessToken } from "./session.js";
-import { applyUserState, db, ensureAuthState, hasUserData, legacyStateForEmail, persistLocal } from "./store.js";
+import { applyUserState, db, ensureAuthState, getCurrentUser, hasUserData, legacyStateForEmail, persistLocal } from "./store.js";
 import { syncStateNow } from "./sync.js";
 import { normalizeEmail } from "../utils/format.js";
 
@@ -46,20 +46,25 @@ export async function loginWithGoogleCredential(credential){
   await authenticateFromResponse(result,legacyStateForEmail(result.user.email));
 }
 
-// Recupera a sessão salva (token local). Retorna true se o usuário continua autenticado.
+// Recupera a sessão salva (token local). Resultado:
+//  "online"     — token válido; estado do servidor aplicado
+//  "offline"    — servidor inacessível (sem rede, timeout, 5xx); segue com os dados salvos no aparelho
+//  "signed-out" — sem sessão ou token rejeitado (401/403)
 export async function restoreSession(){
   ensureAuthState();
-  if(!apiConfigured()){ setAccessToken(""); return false; }
+  if(!apiConfigured()){ setAccessToken(""); return "signed-out"; }
   const token=getAccessToken();
-  if(!token) return false;
+  if(!token) return "signed-out";
   try{
-    const user=await apiRequest("/auth/me");
-    const serverState=await apiRequest("/state");
+    const user=await apiRequest("/auth/me",{timeoutMs:SESSION_CHECK_TIMEOUT_MS});
+    const serverState=await apiRequest("/state",{timeoutMs:SESSION_CHECK_TIMEOUT_MS});
     await authenticateFromResponse({access_token:token,user,state:serverState},legacyStateForEmail(user.email));
-    return true;
+    return "online";
   }catch(err){
+    const rejected=err?.status===401||err?.status===403;
+    if(!rejected && getCurrentUser()) return "offline";
     clearLocalSession();
-    return false;
+    return "signed-out";
   }
 }
 

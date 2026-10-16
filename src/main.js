@@ -9,7 +9,7 @@ import { deleteMyWorkout, renderTrainings } from "./controllers/trainingsControl
 import { confirmExitWorkout, startExerciseTimer, startWorkoutById } from "./controllers/workoutController.js";
 import { exerciseDBGetAll, exerciseDBSave, exerciseDBSeedFromCurrentData, exerciseLibrarySearch, salvarNovoExercicio } from "./models/exerciseLibraryStore.js";
 import { startSync } from "./models/sync.js";
-import { setValue } from "./models/workoutSession.js";
+import { setValue, state } from "./models/workoutSession.js";
 import { on } from "./utils/events.js";
 import { closeDialog, fillDialogField, mdDialogSubmit, mdSheetAction } from "./views/components/dialogs.js";
 import { clearFieldError, selectChip, stepNumber } from "./views/components/fields.js";
@@ -56,7 +56,18 @@ window.ExerciseLibrary = {
 startSync();
 on("session:expired", handleSessionExpired);
 
-if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js"));
+if("serviceWorker" in navigator){
+  // Quando uma versão nova do app assume, recarrega para usar os arquivos novos —
+  // exceto durante um treino em andamento (a atualização entra na próxima abertura).
+  const hadController=!!navigator.serviceWorker.controller;
+  let reloading=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(!hadController||reloading||state.workout) return;
+    reloading=true;
+    location.reload();
+  });
+  window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js"));
+}
 
 // Módulos são executados após o parse do HTML; o DOM já está pronto aqui.
 exerciseDBSeedFromCurrentData().catch(err => console.warn("Biblioteca de exercícios:", err));

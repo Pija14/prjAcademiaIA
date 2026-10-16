@@ -88,3 +88,14 @@ export function authView({isLogin}){
       <footer class="auth-footer">${mdIcon("shield")}<span>Seus dados ficam separados por conta e protegidos por login seguro.</span></footer>
     </div>`;
 }
+
+// Tela exibida enquanto o app verifica a sessão salva.
+export function splashView(){
+  return `
+    <div class="app-splash" role="status" aria-live="polite">
+      <span class="auth-logo">${mdIcon("logo")}</span>
+      <span class="auth-brand-name">Meu Treino</span>
+      <span class="md-spinner app-splash-spinner" aria-hidden="true"></span>
+      <span class="app-splash-text">Carregando seus treinos…</span>
+    </div>`;
+}
