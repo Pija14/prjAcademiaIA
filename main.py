@@ -302,6 +302,76 @@ def me(user: User = Depends(current_user)) -> UserResponse:
     return user_response(user)
 
 
+# -----------------------------
+# Google sign-in
+# -----------------------------
+# The PWA obtains a Google ID token through Google Identity Services and sends it
+# here. The token is verified against Google's public keys before any account is
+# created or authenticated; the frontend never decides who the user is.
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+GOOGLE_ISSUERS = {"accounts.google.com", "https://accounts.google.com"}
+google_jwks = jwt.PyJWKClient("https://www.googleapis.com/oauth2/v3/certs", cache_keys=True, lifespan=3600, timeout=10)
+
+
+class GoogleLoginRequest(BaseModel):
+    credential: str = Field(min_length=20, max_length=4096)
+
+
+def verify_google_credential(credential: str) -> dict[str, Any]:
+    try:
+        signing_key = google_jwks.get_signing_key_from_jwt(credential)
+        claims = jwt.decode(
+            credential,
+            signing_key.key,
+            algorithms=["RS256"],
+            audience=GOOGLE_CLIENT_ID,
+            options={"require": ["iss", "aud", "sub", "exp", "iat"]},
+            leeway=30,
+        )
+    except jwt.PyJWKClientConnectionError as exc:
+        raise HTTPException(503, "Não foi possível validar o login com o Google agora. Tente novamente.") from exc
+    except (jwt.PyJWTError, jwt.PyJWKClientError) as exc:
+        raise HTTPException(401, "Credencial do Google inválida ou expirada.") from exc
+    if claims.get("iss") not in GOOGLE_ISSUERS:
+        raise HTTPException(401, "Emissor da credencial do Google inválido.")
+    if not claims.get("email") or claims.get("email_verified") is not True:
+        raise HTTPException(401, "Sua conta do Google precisa ter um e-mail verificado.")
+    return claims
+
+
+@app.get("/auth/google/config")
+def google_config() -> dict[str, Any]:
+    # The client ID is public by design; it identifies the app to Google.
+    return {"enabled": bool(GOOGLE_CLIENT_ID), "client_id": GOOGLE_CLIENT_ID}
+
+
+@app.post("/auth/google", response_model=AuthResponse)
+def google_login(data: GoogleLoginRequest) -> AuthResponse:
+    require_jwt_secret()
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(503, "Login com Google não está configurado no servidor.")
+    claims = verify_google_credential(data.credential)
+    email = normalize_email(str(claims["email"]))
+    name = str(claims.get("name") or "").strip()[:120] or email.split("@", 1)[0]
+    with SessionLocal() as session:
+        user = session.scalar(select(User).where(User.email == email))
+        if not user:
+            now = datetime.now(timezone.utc)
+            user = User(
+                id=new_id("user"),
+                name=name,
+                email=email,
+                # Google accounts have no local password; this random hash can never be matched.
+                password_hash=hash_password(secrets.token_urlsafe(32)),
+                created_at=now,
+            )
+            session.add(user)
+            session.add(UserState(user_id=user.id, state_json=json.dumps(blank_state(), ensure_ascii=False), updated_at=now))
+            session.commit()
+        state = read_user_state(session, user.id)
+        return AuthResponse(access_token=create_access_token(user.id), user=user_response(user), state=state)
+
+
 @app.get("/state")
 def get_state(user: User = Depends(current_user)) -> dict[str, Any]:
     with SessionLocal() as session:
