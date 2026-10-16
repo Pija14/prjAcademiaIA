@@ -1,3 +1,70 @@
+## v59 — Frontend reorganizado em MVC (módulos ES)
+
+O `app.js` único (~2.300 linhas) foi dividido em 41 módulos ES nativos organizados em MVC, sem build. Decisão e alternativas em [`docs/adr/0001-frontend-mvc-com-modulos-es.md`](docs/adr/0001-frontend-mvc-com-modulos-es.md).
+
+```
+src/
+  main.js            composição: eventos entre camadas, ações dos handlers inline (UI_ACTIONS), boot
+  config/            constantes e catálogo de exercícios
+  utils/             formatação pura e barramento de eventos
+  models/            dados e regras (store, sessão, API, sincronização, treinos, execução, histórico, configurações, IA)
+  views/             templates por tela + components/ (ícones, campos, diálogos, snackbar, blocos comuns)
+  controllers/       um por tela: lê models, monta o view-model, chama a view, trata ações
+```
+
+- Regras de dependência: models não conhecem views/controllers; views recebem dados prontos; model avisa controller por evento (`store:changed`, `session:expired`).
+- Estado privado ao módulo dono (ex.: mês do calendário, rascunho da IA); cada módulo exporta só o que outro módulo usa.
+- Removidas ~30 funções inalcançáveis (sistema antigo de treinos A/B/C, exportação sem botão, stubs vazios). O formato dos dados e o contrato com a API não mudaram.
+- Service worker: `ASSETS` inclui todos os módulos, instalação com `cache: "reload"` e resposta com `ignoreSearch` — corrige o modo offline, que não encontrava `app.js?v=N` no cache.
+- Deploy: o workflow passa a publicar a pasta `src/`.
+- Cache e versões atualizados para v59.
+
+## v58 — Calendário, editor de treinos, IA e Configurações em Material Design 3
+
+- Componentes M3 compartilhados em `app.js`: `mdTextField`, `chipGroup`, `openDialog`/`confirmDialog`/`promptDialog`, `actionSheet` (bottom sheet) e `showSnackbar`.
+- Fim dos diálogos nativos do navegador (`alert`/`confirm`/`prompt`) nas telas em uso: confirmações, nomes de grupo e séries agora usam diálogos M3 com validação na própria tela.
+- Calendário: grade no estilo date picker, dias com treino destacados, dia selecionado com a lista de treinos logo abaixo, botão "Hoje" e resumo do mês.
+- Editor de treinos: campos M3, nível em chips, grupos em cartões com menu de ações, busca de exercícios com resultados em tempo real (antes o primeiro resultado era escolhido sem mostrar opções) e criação de exercício personalizado já abrindo a configuração de séries.
+- O editor preserva nome, descrição e nível digitados ao adicionar ou reorganizar grupos e exercícios antes de salvar.
+- Planejador de IA: objetivo, nível e dias em chips, campos com ajuda e validação, carregamento no botão; ao voltar da prévia, os dados preenchidos são mantidos.
+- Configurações: cartão da conta, meta semanal em chips, tempos com botões −5/+5 s, validação na tela e confirmação por snackbar.
+- Cache e query strings atualizados para v58.
+
+## v57 — Treinos, Execução e Histórico em Material Design 3
+
+- Treinos: cartões com grupos musculares em chips, total de séries, data do último treino, botões Iniciar/Editar e exclusão por ícone; botão flutuante "Novo treino" (substitui o "+" da barra superior); acesso destacado ao planejamento com IA.
+- Execução: estados visualmente distintos — pronto, série em execução (verde), descansando (azul) e exercício concluído —, indicador das séries, barra de progresso do treino, cronômetro total no cabeçalho, tabela de séries com a série atual destacada e prévia do próximo exercício.
+- Conclusão do treino redesenhada com resumo de tempo, exercícios e séries.
+- Histórico agrupado por mês em lista segmentada, com dia e dia da semana; detalhes do treino mostram cada série (reps × carga) e voltam para a tela de origem.
+- Nomes de treinos e exercícios: palavras de ligação ficam minúsculas ("Costas e Bíceps") e siglas são preservadas ("Puxador Triangular ART").
+- Cache e query strings atualizados para v57.
+
+## v56 — Tela Início em Material Design 3
+
+- Nova tela Início: saudação por horário, cartão de meta semanal com anel de progresso e dias da semana, atalho para iniciar o treino sugerido (o feito há mais tempo), indicadores do mês, último treino, atalhos dos treinos e gráfico de atividade do mês com dica ao passar o mouse e tabela acessível.
+- Barra superior e barra de navegação inferior no padrão M3 (indicador em pílula, ícones Material) em todas as telas.
+- Ícones Material compartilhados em `MD_ICONS` / `mdIcon()` em `app.js`.
+- Corrigido: o gráfico mensal somava exercícios do mesmo dia de outros meses.
+- Removido o nome fixo "Rafael" usado quando o usuário não tinha nome.
+- Cache e query strings atualizados para v56.
+
+## v55 — Login em Material Design 3 e entrada com Google
+
+- Tela de login e cadastro redesenhada seguindo o Material Design 3: text fields outlined, segmented button, filled button, state layers, tema claro/escuro e layout em duas colunas a partir de 840px.
+- Tokens `--md-sys-*` (cor, forma, elevação, estados, movimento) gerados com a biblioteca oficial `material-color-utilities` a partir da cor-semente `#22c55e` — base para migrar as demais telas.
+- Erros exibidos na própria tela (por campo e em banner), sem `alert()`; aviso de Caps Lock; estado de carregamento; aviso quando o servidor está "acordando".
+- Login com Google via Google Identity Services. O ID token é validado no backend (assinatura RS256 com as chaves públicas do Google, `aud`, `iss`, expiração e e-mail verificado) antes de criar ou autenticar a conta.
+- Conta Google com o mesmo e-mail de uma conta existente entra nessa conta (os dados são preservados).
+- Novos endpoints: `GET /auth/google/config` (Client ID público) e `POST /auth/google`.
+- Cache e query strings atualizados para v55.
+
+### Como ativar o login com Google
+
+1. No [Google Cloud Console](https://console.cloud.google.com/apis/credentials), crie um **ID do cliente OAuth** do tipo **Aplicativo da Web** (configure antes a tela de consentimento OAuth, se pedido).
+2. Em **Origens JavaScript autorizadas**, adicione `https://pija14.github.io` e, para testes locais, `http://localhost:8000` e `http://localhost`. Não é preciso URI de redirecionamento.
+3. No Render, defina a variável `GOOGLE_CLIENT_ID` com o ID gerado (`…apps.googleusercontent.com`) e faça o redeploy.
+4. O frontend busca o Client ID em `/auth/google/config` — não é preciso alterar o `config.js` nem o workflow. Sem a variável, o botão do Google aparece com um aviso de "ainda não ativado".
+
 ## v50 — Login, autenticação por API e isolamento multiusuário
 
 - Login e cadastro redesenhados com interface mobile-first.
