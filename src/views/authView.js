@@ -1,4 +1,5 @@
 import { esc } from "../utils/format.js";
+import { brandMarkView } from "./components/brand.js";
 import { GOOGLE_G_LOGO, mdIcon } from "./components/icons.js";
 
 // Views da tela de login e cadastro.
@@ -38,7 +39,7 @@ export function authView({isLogin}){
       <main class="auth-layout">
         <section class="auth-hero" aria-labelledby="auth-hero-title">
           <div class="auth-brand">
-            <span class="auth-logo">${mdIcon("logo")}</span>
+            ${brandMarkView({size:48,className:"brand-mark auth-logo"})}
             <span class="auth-brand-name">Meu Treino</span>
           </div>
           <h1 id="auth-hero-title" class="auth-hero-title">Seu treino. <br>Sua evolução.</h1>
@@ -93,8 +94,9 @@ export function authView({isLogin}){
 export function splashView(){
   return `
     <div class="app-splash" role="status" aria-live="polite">
-      <span class="auth-logo">${mdIcon("logo")}</span>
+      ${brandMarkView({size:80,className:"brand-mark app-splash-logo"})}
       <span class="auth-brand-name">Meu Treino</span>
+      <span class="app-splash-tagline">Seu treino. Sua evolução.</span>
       <span class="md-spinner app-splash-spinner" aria-hidden="true"></span>
       <span class="app-splash-text">Carregando seus treinos…</span>
     </div>`;

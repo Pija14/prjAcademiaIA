@@ -1,4 +1,4 @@
-export const APP_VERSION = "v60";
+export const APP_VERSION = "v61";
 
 export const DEFAULT_EXERCISE_SECONDS = 60;
 

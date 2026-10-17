@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <!-- Versão "maskable": fundo até a borda e símbolo dentro da zona segura (80%), para o Android recortar em círculo/squircle. -->
+  <defs>
+    <linearGradient id="mt-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f6b3a"/>
+      <stop offset="1" stop-color="#34a853"/>
+    </linearGradient>
+  </defs>
+  <rect width="48" height="48" fill="url(#mt-bg)"/>
+  <g transform="translate(6.24 6.24) scale(.74)">
+    <path d="M24 38.5 11.6 26.4a8.6 8.6 0 0 1 12.4-11.9 8.6 8.6 0 0 1 12.4 11.9Z" fill="#b6f1bb"/>
+    <path d="M7.5 25h5.5l3.4-8.5 7.6 15 7.6-15 3.4 8.5h5.5" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

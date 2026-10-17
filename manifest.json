@@ -1,12 +1,20 @@
 {
   "name": "Meu Treino",
   "short_name": "Meu Treino",
+  "description": "Planeje, execute e acompanhe seus treinos, com foco em saúde e evolução.",
+  "id": "./",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#f4f6f8",
-  "theme_color": "#f4f6f8",
+  "orientation": "portrait",
+  "background_color": "#ebefe7",
+  "theme_color": "#f7fbf2",
   "lang": "pt-BR",
+  "categories": ["health", "fitness", "lifestyle"],
   "icons": [
-    {"src":"icons/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
 }

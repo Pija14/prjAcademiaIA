@@ -1,8 +1,10 @@
-const CACHE = "meu-treino-v60";
+const CACHE = "meu-treino-v61";
 // Todos os arquivos do app (inclusive cada módulo em src/) precisam estar aqui para o modo offline.
 // Ao criar um módulo novo, adicione-o a esta lista e incremente CACHE.
 const ASSETS = [
-  "./", "./index.html", "./styles.css", "./manifest.json", "./icons/icon.svg",
+  "./", "./index.html", "./styles.css", "./manifest.json",
+  "./icons/logo.svg", "./icons/favicon-32.png", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png",
+  "./src/views/components/brand.js",
   "./src/config/constants.js",
   "./src/config/exerciseCatalog.js",
   "./src/controllers/aiController.js",
@@ -66,6 +68,6 @@ self.addEventListener("fetch", e => {
     );
     return;
   }
-  // Demais arquivos: cache primeiro. ignoreSearch: "styles.css?v=60" corresponde à entrada sem query string.
+  // Demais arquivos: cache primeiro. ignoreSearch: "styles.css?v=61" corresponde à entrada sem query string.
   e.respondWith(caches.match(e.request, { ignoreSearch: true }).then(cached => cached || fetch(e.request)));
 });

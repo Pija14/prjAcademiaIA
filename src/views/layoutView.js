@@ -1,4 +1,5 @@
 import { esc } from "../utils/format.js";
+import { brandMarkView } from "./components/brand.js";
 import { mdIcon } from "./components/icons.js";
 
 const NAV_ITEMS=[
@@ -19,7 +20,7 @@ export function layout(content, active="home"){
   app.innerHTML = `
   <div class="shell page-${esc(active)}">
     <header class="topbar md-top-app-bar">
-      <div class="topbar-brand"><span class="topbar-logo" aria-hidden="true">${mdIcon("logo")}</span><span class="topbar-title">Meu Treino</span></div>
+      <div class="topbar-brand">${brandMarkView({size:36,className:"brand-mark topbar-logo"})}<span class="topbar-title">Meu Treino</span></div>
       <div class="topbar-actions"><button class="md-icon-button" onclick="openSettings()" aria-label="Configurações" title="Configurações">${mdIcon("settings")}</button></div>
     </header>
     <main>${content}</main>

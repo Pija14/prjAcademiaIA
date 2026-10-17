@@ -1,3 +1,10 @@
+## v61 — Nova marca
+
+- Logo novo: coração com uma linha de batimento cujo traçado central forma o "M" de *Meu Treino* (saúde, bem-estar e treino), nas cores do Material Design 3 do app. Guia de uso em [`docs/marca.md`](docs/marca.md).
+- Aplicado na barra superior, no login e na tela de abertura (com "batimento" animado, desligado com movimento reduzido).
+- Ícones do PWA: SVG, PNG 192/512, versão *maskable* para Android, `apple-touch-icon` para iPhone e favicon 32 px; manifesto com descrição, categorias e cores do tema; `theme-color` para claro e escuro.
+- Removidos os ícones antigos (halter azul) que não seguiam a identidade visual.
+
 ## v60 — Inicialização sem tela branca e uso sem conexão
 
 - Tela de carregamento exibida imediatamente ao abrir o app, enquanto a sessão é verificada (o servidor gratuito pode levar cerca de 1 minuto para acordar).
