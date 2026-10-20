@@ -578,11 +578,14 @@ async def generate_with_openai(prompt: str, images: list[SheetImage] | None = No
 
 logger = logging.getLogger("meu_treino.ia")
 
-GEMINI_FALLBACK_MODELS = "gemini-3-flash-preview,gemini-flash-latest"
+# No plano gratuito cada modelo tem a própria cota diária (20 pedidos/dia), e às vezes um modelo
+# fica sobrecarregado: com vários modelos de reserva, quando um recusa (429/503) o próximo atende.
+GEMINI_FALLBACK_MODELS = "gemini-3-flash-preview,gemini-3.6-flash,gemini-3.5-flash,gemini-3.5-flash-lite,gemini-flash-lite-latest,gemini-flash-latest"
 # Modelo sobrecarregado (429/503), com erro interno (500) ou retirado (404): tenta o próximo da lista.
 GEMINI_RETRY_STATUS = {404, 429, 500, 503}
-# Tempo máximo por modelo; esgotado, tenta o próximo (o app espera até 90 s com foto).
+# Tempo máximo por modelo; esgotado, tenta o próximo. O prazo total fica abaixo do que o app espera (90 s com foto).
 GEMINI_TIMEOUT_TEXT, GEMINI_TIMEOUT_IMAGE = 30.0, 40.0
+GEMINI_DEADLINE_TEXT, GEMINI_DEADLINE_IMAGE = 50.0, 75.0
 
 
 def gemini_models() -> list[str]:
@@ -599,28 +602,59 @@ def gemini_generation_config(model: str, with_images: bool) -> dict:
     return config
 
 
+def gemini_api_key() -> str:
+    """Lê GEMINI_API_KEY tolerando erros comuns ao colar no painel: espaços, aspas e o prefixo "GEMINI_API_KEY="."""
+    key = os.getenv("GEMINI_API_KEY", "").strip()
+    if key.upper().startswith("GEMINI_API_KEY="):
+        key = key.split("=", 1)[1].strip()
+    return key.strip("\"'").strip()
+
+
+def gemini_error_message(response: httpx.Response) -> str:
+    """Traduz a recusa do Google em uma mensagem útil, sem expor a chave."""
+    try:
+        error = response.json().get("error", {})
+    except ValueError:
+        error = {}
+    text = f"{error.get('status', '')} {error.get('message', '')}".lower()
+    reasons = " ".join(str(d.get("reason", "")) for d in error.get("details", []) if isinstance(d, dict)).lower()
+    if "api_key_invalid" in reasons or "api key not valid" in text or "api key expired" in text:
+        return "A chave do Gemini configurada no servidor é inválida. Confira GEMINI_API_KEY no Render."
+    if response.status_code == 403 or "permission_denied" in text:
+        return "A chave do Gemini não tem permissão para usar este modelo. Confira GEMINI_API_KEY no Render."
+    if response.status_code == 429 or "resource_exhausted" in text:
+        return "Limite de uso da IA atingido. Tente novamente em alguns minutos."
+    if response.status_code in (500, 503):
+        return "A IA está sobrecarregada no momento. Tente novamente em instantes."
+    return "Não foi possível gerar o plano com a IA. Tente novamente em instantes."
+
+
 def gemini_text(result: dict) -> str:
     parts = result["candidates"][0]["content"]["parts"]
     return next(part["text"] for part in parts if part.get("text") and not part.get("thought"))
 
 
 async def generate_with_gemini(prompt: str, images: list[SheetImage] | None = None) -> dict:
-    key = os.getenv("GEMINI_API_KEY", "").strip()
+    key = gemini_api_key()
     if not key:
         raise HTTPException(503, "GEMINI_API_KEY não configurada no servidor.")
     parts: list[dict] = [{"text": prompt}] + [{"inline_data": {"mime_type": img.mimeType, "data": img.data}} for img in images or []]
     # A chave vai no cabeçalho, não na URL, para não aparecer em logs.
     headers = {"x-goog-api-key": key}
     timeout = GEMINI_TIMEOUT_IMAGE if images else GEMINI_TIMEOUT_TEXT
+    deadline = time.monotonic() + (GEMINI_DEADLINE_IMAGE if images else GEMINI_DEADLINE_TEXT)
     response, timed_out = None, False
-    async with httpx.AsyncClient(timeout=timeout) as client:
+    async with httpx.AsyncClient() as client:
         for model in gemini_models():
+            remaining = deadline - time.monotonic()
+            if remaining < 5:
+                break
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
             payload = {"contents": [{"parts": parts}], "generationConfig": gemini_generation_config(model, bool(images))}
             try:
-                response = await client.post(url, json=payload, headers=headers)
+                response = await client.post(url, json=payload, headers=headers, timeout=min(timeout, remaining))
             except httpx.TimeoutException:
-                logger.warning("Gemini %s: sem resposta em %ss", model, timeout)
+                logger.warning("Gemini %s: sem resposta a tempo", model)
                 timed_out, response = True, None
                 continue
             except httpx.HTTPError as exc:
@@ -630,6 +664,10 @@ async def generate_with_gemini(prompt: str, images: list[SheetImage] | None = No
             if response.status_code not in GEMINI_RETRY_STATUS:
                 break
             logger.warning("Gemini %s: HTTP %s, tentando o próximo modelo", model, response.status_code)
+    if response is not None and response.status_code >= 400:
+        message = gemini_error_message(response)
+        logger.warning("Gemini recusou o pedido: HTTP %s — %s", response.status_code, message)
+        raise HTTPException(502, message)
     if response is None and timed_out:
         raise HTTPException(504, "A IA demorou demais para responder. Tente novamente em instantes.")
     if response is None or response.status_code >= 400:

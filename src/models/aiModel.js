@@ -88,11 +88,12 @@ async function postAi(path,body,timeoutMs){
 }
 
 // Lê a foto da ficha e devolve o treino transcrito (mesmo formato do plano sugerido).
-export function requestAiPlanFromSheet({images,notes},{timeoutMs=90000}={}){
+// 150 s: inclui o tempo de o servidor gratuito "acordar" e a troca de modelo quando um está sem cota.
+export function requestAiPlanFromSheet({images,notes},{timeoutMs=150000}={}){
   return postAi("/ai/plan-from-image",{images:images.map(({mimeType,data})=>({mimeType,data})),notes:String(notes||"").trim()},timeoutMs);
 }
 
 // Solicita um plano ao backend. Lança erro com mensagem amigável em caso de falha.
-export async function requestAiPlan(input,{timeoutMs=30000}={}){
+export async function requestAiPlan(input,{timeoutMs=90000}={}){
   return postAi("/ai/plan",input,timeoutMs);
 }

@@ -1,4 +1,4 @@
-const CACHE = "meu-treino-v63";
+const CACHE = "meu-treino-v64";
 // Todos os arquivos do app (inclusive cada módulo em src/) precisam estar aqui para o modo offline.
 // Ao criar um módulo novo, adicione-o a esta lista e incremente CACHE.
 const ASSETS = [
