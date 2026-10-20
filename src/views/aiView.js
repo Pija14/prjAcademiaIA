@@ -111,39 +111,66 @@ export function aiMessageView(message,isError=false){
   return `<div class="auth-banner auth-banner-${isError?"error":"info"}" role="${isError?"alert":"status"}">${mdIcon(isError?"error":"info")}<span>${esc(message)}</span></div>`;
 }
 
-export function aiPlanPreviewView(plan){
-  const exercises=plan.groups.reduce((n,g)=>n+g.exercises.length,0);
-  const groups=plan.groups.map(g=>`
-    <section class="m3-list-section">
-      <h2 class="m3-list-heading">${esc(f2DisplayName(g.name))} <span>${g.exercises.length}</span></h2>
-      <div class="m3-list">${g.exercises.map((e,i)=>`
-        <div class="m3-list-item is-static">
-          <span class="details-index">${i+1}</span>
-          <span class="m3-list-text">
-            <span class="m3-list-title is-wrap">${esc(f2DisplayName(e.name))}</span>
-            <span class="m3-list-support">${e.seriesCount} ${e.seriesCount===1?"série":"séries"}${e.sets.some(s=>s.reps)?` · ${esc(e.sets.map(s=>s.reps).join("/"))} reps`:""}${e.sets.some(s=>s.weight)?` · ${esc([...new Set(e.sets.map(s=>s.weight).filter(Boolean))].join("/"))}`:""}${e.equipment?` · ${esc(e.equipment)}`:""}</span>
-          </span>
-        </div>`).join("")}</div>
-    </section>`).join("");
+function exerciseSupport(e){
+  const reps=e.sets.some(s=>s.reps)?` · ${esc(e.sets.map(s=>s.reps).join("/"))} reps`:"";
+  const weights=[...new Set(e.sets.map(s=>s.weight).filter(Boolean))];
+  return `${e.seriesCount} ${e.seriesCount===1?"série":"séries"}${reps}${weights.length?` · ${esc(weights.join("/"))}`:""}${e.equipment?` · ${esc(e.equipment)}`:""}`;
+}
+
+function workoutPreviewCard(w,index,total){
+  const exercises=w.groups.reduce((n,g)=>n+g.exercises.length,0);
+  return `
+    <article class="ai-workout" aria-labelledby="ai-workout-${index}">
+      <header class="ai-workout-head">
+        <span class="ai-workout-badge" aria-hidden="true">${index+1}</span>
+        <div class="ai-workout-title">
+          <h2 id="ai-workout-${index}">${esc(f2DisplayName(w.name))}</h2>
+          ${w.description?`<p>${esc(w.description)}</p>`:""}
+          <span class="ai-workout-meta">${w.groups.length} ${w.groups.length===1?"grupo":"grupos"} · ${exercises} ${exercises===1?"exercício":"exercícios"}</span>
+        </div>
+        ${total>1?`<button type="button" class="md-icon-button" onclick="removeAiDraftWorkoutUi(${index})" aria-label="Remover ${esc(f2DisplayName(w.name))} da sugestão" title="Remover da sugestão">${mdIcon("delete")}</button>`:""}
+      </header>
+      ${w.groups.map(g=>`
+        <section class="m3-list-section">
+          <h3 class="m3-list-heading">${esc(f2DisplayName(g.name))} <span>${g.exercises.length}</span></h3>
+          <div class="m3-list">${g.exercises.map((e,i)=>`
+            <div class="m3-list-item is-static">
+              <span class="details-index">${i+1}</span>
+              <span class="m3-list-text">
+                <span class="m3-list-title is-wrap">${esc(f2DisplayName(e.name))}</span>
+                <span class="m3-list-support">${exerciseSupport(e)}</span>
+              </span>
+            </div>`).join("")}</div>
+        </section>`).join("")}
+    </article>`;
+}
+
+// Revisão da sugestão: um bloco por treino (ex.: Treino A, B e C), todos salvos de uma vez.
+export function aiPlanPreviewView(workouts){
+  const total=workouts.length;
+  const exercises=workouts.reduce((n,w)=>n+w.groups.reduce((m,g)=>m+g.exercises.length,0),0);
+  const notes=[...new Set(workouts.flatMap(w=>w.aiNotes||[]))].slice(0,6);
+  const hasWeights=workouts.some(w=>w.groups.some(g=>g.exercises.some(e=>e.sets.some(s=>s.weight))));
+  const title=total===1?f2DisplayName(workouts[0].name):`${total} treinos`;
   return `
     <div class="m3-page ai-preview">
       <div class="m3-subheader">
         <button class="md-icon-button" onclick="renderAiPlanner()" aria-label="Alterar dados" title="Alterar dados">${mdIcon("arrowBack")}</button>
-        <div class="m3-subheader-text"><span class="m3-subheader-overline">Sugestão da IA</span><h1 class="m3-subheader-title">${esc(f2DisplayName(plan.name))}</h1></div>
+        <div class="m3-subheader-text"><span class="m3-subheader-overline">Sugestão da IA</span><h1 class="m3-subheader-title">${esc(title)}</h1></div>
       </div>
       <section class="ai-intro is-preview">
         <span class="ai-intro-icon" aria-hidden="true">${mdIcon("sparkle")}</span>
         <div>
-          <p>${esc(plan.description)}</p>
-          <div class="ai-preview-chips"><span class="m3-chip">${esc(plan.level)}</span><span class="m3-chip">${plan.groups.length} ${plan.groups.length===1?"grupo":"grupos"}</span><span class="m3-chip">${exercises} ${exercises===1?"exercício":"exercícios"}</span></div>
+          <p>${total>1?`A IA separou ${total} treinos para dias diferentes. Cada um vira um treino em Meus Treinos.`:esc(workouts[0].description)}</p>
+          <div class="ai-preview-chips"><span class="m3-chip">${total} ${total===1?"treino":"treinos"}</span><span class="m3-chip">${exercises} ${exercises===1?"exercício":"exercícios"}</span></div>
         </div>
       </section>
-      ${groups}
-      ${(plan.aiNotes||[]).length?`<section class="m3-card"><h2 class="m3-card-title">Observações da IA</h2><ul class="ai-notes">${plan.aiNotes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul></section>`:""}
-      <p class="m3-note">${mdIcon("info")}<span>${plan.groups.some(g=>g.exercises.some(e=>e.sets.some(s=>s.weight)))?"As cargas da ficha já foram preenchidas. Confira tudo antes de salvar.":"As cargas ficam em branco para serem preenchidas antes de iniciar cada série."}</span></p>
+      ${workouts.map((w,i)=>workoutPreviewCard(w,i,total)).join("")}
+      ${notes.length?`<section class="m3-card"><h2 class="m3-card-title">Observações da IA</h2><ul class="ai-notes">${notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul></section>`:""}
+      <p class="m3-note">${mdIcon("info")}<span>${hasWeights?"As cargas da ficha já foram preenchidas. Confira tudo antes de salvar.":"As cargas ficam em branco para serem preenchidas antes de iniciar cada série."}</span></p>
       <div class="m3-actions">
         <button class="md-text-button" onclick="discardAiPlanDraft()">Descartar</button>
-        <button class="md-filled-button" onclick="saveAiPlanDraft()">${mdIcon("check")}<span>Salvar em Meus Treinos</span></button>
+        <button class="md-filled-button" onclick="saveAiPlanDraft()">${mdIcon("check")}<span>${total>1?`Salvar ${total} treinos`:"Salvar em Meus Treinos"}</span></button>
       </div>
     </div>`;
 }

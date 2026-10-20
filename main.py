@@ -466,13 +466,23 @@ class PlanRequest(BaseModel):
         return value.strip()
 
 
-SYSTEM_PROMPT = """You create educational workout-plan suggestions. Return ONLY valid JSON with this shape:
-{
-  "name": "string", "description": "string", "level": "Iniciante|Intermediário|Avançado|Personalizado",
-  "groups": [{"name": "string", "exercises": [{"name": "string", "equipment": "string", "seriesCount": 3, "sets": [{"reps": "8-12"}]}]}],
+# Grupos musculares usados pelo app dentro de cada treino (mesma lista do frontend, F2_GROUPS).
+MUSCLE_GROUPS = "Peito, Costas, Bíceps, Tríceps, Ombros, Trapézio, Quadríceps, Posterior de coxa, Glúteos, Panturrilhas, Abdômen, Lombar, Antebraços, Adutores, Abdutores"
+
+WORKOUTS_SHAPE = """{
+  "workouts": [
+    {"name": "string", "description": "string", "level": "Iniciante|Intermediário|Avançado|Personalizado",
+     "groups": [{"name": "string", "exercises": [{"name": "string", "equipment": "string", "seriesCount": 3, "sets": [{"reps": "8-12", "weight": ""}]}]}]}
+  ],
   "notes": ["string"]
-}
-Use 1-12 groups, 1-16 exercises per group, and 1-12 sets per exercise. Sets must match seriesCount.
+}"""
+
+SYSTEM_PROMPT = f"""You create educational workout-plan suggestions. Return ONLY valid JSON with this shape:
+{WORKOUTS_SHAPE}
+- Each distinct training day of the split is ONE separate workout in "workouts" (e.g. 3 days A/B/C -> 3 workouts named "Treino A", "Treino B", "Treino C"; a full-body routine repeated on every day may be 1 workout).
+- Inside each workout, "groups" are muscle groups. Use these names whenever they fit: {MUSCLE_GROUPS}.
+- "description" of each workout summarizes its focus (e.g. "Peito e tríceps").
+Use 1-7 workouts, 1-8 groups per workout, 1-12 exercises per group, and 1-12 sets per exercise. Sets must match seriesCount. Leave "weight" empty.
 Write every visible value in Brazilian Portuguese. Do not prescribe medical treatment, diagnose injuries, or claim guaranteed results. Include a brief educational-safety note in notes. Avoid unsupported or unsafe exercises when limitations are supplied."""
 
 
@@ -507,23 +517,21 @@ class SheetPlanRequest(BaseModel):
         return value.strip()
 
 
-SHEET_PROMPT = """You read photos of a gym workout sheet ("ficha de treino") and transcribe it. Return ONLY valid JSON with this shape:
-{
-  "name": "string", "description": "string", "level": "Personalizado",
-  "groups": [{"name": "string", "exercises": [{"name": "string", "equipment": "string", "seriesCount": 3, "sets": [{"reps": "12", "weight": "20 kg"}]}]}],
-  "notes": ["string"]
-}
+SHEET_PROMPT = f"""You read photos of a gym workout sheet ("ficha de treino") and transcribe it. Return ONLY valid JSON with this shape:
+{WORKOUTS_SHAPE}
 Rules:
 - Transcribe faithfully. Do NOT invent, add or replace exercises. Keep the order of the sheet.
-- Each training day or letter (Treino A, B, C, Segunda, Superiores...) becomes one group named as in the sheet (e.g. "Treino A").
+- Each training day or letter of the sheet (Treino A, B, C, Segunda, Superiores...) is ONE separate workout in "workouts", named as in the sheet (e.g. "Treino A"); its "description" is the focus written on the sheet (e.g. "Peito / Tríceps") or inferred from the exercises.
+- Inside each workout, put each exercise in its muscle group, using these names: {MUSCLE_GROUPS}. Keep the sheet order of the exercises inside each group.
+- If the sheet has a single list without days, return one workout.
 - "3x12" means seriesCount 3 with reps "12" in each set; "4x10/8/6" means 4 sets with reps per set; "3x30s" keeps "30s"; "até a falha" keeps the text.
 - If a load/weight is written, put it in "weight" of each set (e.g. "20 kg"); otherwise use "".
 - Rest times, cadence or technique notes go to "notes".
 - Use the equipment field only when written or obvious from the exercise name (máquina, halteres, barra, polia, cabo, livre, peso corporal); otherwise "".
 - Fix obvious handwriting/spelling mistakes in exercise names, writing them in Brazilian Portuguese as commonly used in Brazilian gyms.
 - If something is unreadable, skip only that item and mention it in "notes".
-- If the images are not a workout sheet or nothing is readable, return ONLY {"error": "short reason in Brazilian Portuguese"}.
-Use 1-12 groups, 1-16 exercises per group, and 1-12 sets per exercise. Sets must match seriesCount. Write every visible value in Brazilian Portuguese. Include a brief note reminding the user to review the transcription."""
+- If the images are not a workout sheet or nothing is readable, return ONLY {{"error": "short reason in Brazilian Portuguese"}}.
+Use 1-7 workouts, 1-8 groups per workout, 1-12 exercises per group, and 1-12 sets per exercise. Sets must match seriesCount. Use "level": "Personalizado". Write every visible value in Brazilian Portuguese. Include a brief note reminding the user to review the transcription."""
 
 
 def sheet_prompt_for(data: SheetPlanRequest) -> str:
@@ -670,7 +678,7 @@ async def create_plan_from_image(data: SheetPlanRequest, request: Request, user:
     """Lê a foto da ficha de academia e devolve o plano no mesmo formato de /ai/plan."""
     enforce_rate_limit(request)
     result = await generate_plan(sheet_prompt_for(data), data.images)
-    if isinstance(result.get("error"), str) and not result.get("groups"):
+    if isinstance(result.get("error"), str) and not (result.get("workouts") or result.get("groups")):
         raise HTTPException(422, f"Não consegui ler a ficha: {result['error'][:200]}")
     return result
 

@@ -5382,6 +5382,39 @@ body:has(.m3-page) {
   .ai-sheet-actions { grid-template-columns: max-content max-content; }
 }
 
+
+/* Revisão: um bloco por treino sugerido/lido */
+.ai-workout {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-large);
+  background: var(--md-sys-color-surface-container-low, var(--md-sys-color-surface));
+}
+
+.ai-workout-head { display: flex; align-items: flex-start; gap: var(--space-3); }
+.ai-workout-head .md-icon-button { margin: -8px -8px 0 auto; color: var(--md-sys-color-on-surface-variant); }
+
+.ai-workout-badge {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: var(--md-sys-shape-medium);
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ai-workout-title { display: grid; gap: 2px; min-width: 0; }
+.ai-workout-title h2 { margin: 0; font-size: 20px; line-height: 28px; font-weight: 500; }
+.ai-workout-title p { margin: 0; color: var(--md-sys-color-on-surface-variant); font-size: 14px; line-height: 20px; }
+.ai-workout-meta { color: var(--md-sys-color-primary); font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .4px; }
+.ai-workout .m3-list-section { margin: 0; }
+
 /* ---------- Editor de treinos ---------- */
 .editor-groups-head {
   display: flex;

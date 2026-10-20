@@ -1,4 +1,4 @@
-import { discardAiPlanDraft, generateAiPlan, pickSheetPhoto, readSheetWithAi, rememberSheetNotes, removeSheetPhoto, renderAiPlanner, saveAiPlanDraft, setAiPlannerModeUi } from "./controllers/aiController.js";
+import { discardAiPlanDraft, generateAiPlan, pickSheetPhoto, readSheetWithAi, rememberSheetNotes, removeAiDraftWorkoutUi, removeSheetPhoto, renderAiPlanner, saveAiPlanDraft, setAiPlannerModeUi } from "./controllers/aiController.js";
 import { authCapsHint, bootApp, handleForgotPassword, handleGoogleUnavailable, handleLoginSubmit, handleRegisterSubmit, handleSessionExpired, logoutUser, toggleAuthMode, togglePassword } from "./controllers/authController.js";
 import { calendarDay, calendarToday, changeMonth } from "./controllers/calendarController.js";
 import { addExerciseToMyGroup, addMyGroup, chooseExercisePicker, configureMyExercise, createMyWorkoutFromForm, editMyWorkout, filterExercisePicker, openExerciseMenu, openGroupMenu, renderNewWorkout, saveMyWorkoutHeader } from "./controllers/editorController.js";
@@ -36,7 +36,7 @@ const UI_ACTIONS={
   showWorkoutDetails, calendarDay, calendarToday, changeMonth,
   // planejador de IA
   generateAiPlan, saveAiPlanDraft, discardAiPlanDraft,
-  setAiPlannerModeUi, pickSheetPhoto, removeSheetPhoto, readSheetWithAi, rememberSheetNotes,
+  setAiPlannerModeUi, pickSheetPhoto, removeSheetPhoto, readSheetWithAi, rememberSheetNotes, removeAiDraftWorkoutUi,
   // configurações
   saveTrainingSettings,
   // componentes (campos, chips, diálogos)

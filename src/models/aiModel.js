@@ -13,10 +13,11 @@ export function aiPlanningIsConfigured(){ return /^https:\/\//i.test(aiPlanningA
 
 let aiPlannerLast=null;
 
-function normalizeAiPlan(raw){
-  const plan=raw?.plan||raw;
-  if(!plan||typeof plan!=="object") throw new Error("A IA retornou um plano inválido.");
-  const allowedLevels=["Iniciante","Intermediário","Avançado","Personalizado"];
+const ALLOWED_LEVELS=["Iniciante","Intermediário","Avançado","Personalizado"];
+const notesOf=list=>Array.isArray(list)?list.map(n=>String(n).trim().slice(0,220)).filter(Boolean):[];
+
+function normalizeAiWorkout(plan,sharedNotes){
+  if(!plan||typeof plan!=="object") return null;
   const groups=Array.isArray(plan.groups)?plan.groups.slice(0,12).map((group,gi)=>{
     const name=String(group?.name||"").trim().slice(0,80);
     const exercises=Array.isArray(group?.exercises)?group.exercises.slice(0,16).map((exercise,ei)=>{
@@ -30,13 +31,28 @@ function normalizeAiPlan(raw){
     }).filter(Boolean):[];
     return name&&exercises.length?{id:uid("grupo-"),name,order:gi,exercises}:null;
   }).filter(Boolean):[];
-  if(!groups.length) throw new Error("A sugestão não contém grupos e exercícios utilizáveis.");
-  return normalizeWorkout({id:uid("treino-"),name:String(plan.name||"Treino sugerido pela IA").trim().slice(0,80),description:String(plan.description||"Plano sugerido pela IA. Revise antes de executar.").trim().slice(0,300),level:allowedLevels.includes(plan.level)?plan.level:"Personalizado",groups,aiGenerated:true,aiNotes:Array.isArray(plan.notes)?plan.notes.map(n=>String(n).slice(0,220)).slice(0,5):[]});
+  if(!groups.length) return null;
+  const aiNotes=[...new Set([...notesOf(plan.notes),...sharedNotes])].slice(0,6);
+  return normalizeWorkout({id:uid("treino-"),name:String(plan.name||"Treino sugerido pela IA").trim().slice(0,80),description:String(plan.description||"Plano sugerido pela IA. Revise antes de executar.").trim().slice(0,300),level:ALLOWED_LEVELS.includes(plan.level)?plan.level:"Personalizado",groups,aiGenerated:true,aiNotes});
+}
+
+// A IA devolve { workouts: [...], notes } — um treino por dia da divisão (ex.: Treino A, B e C).
+// Também aceita o formato antigo, de um treino só.
+function normalizeAiPlans(raw){
+  const data=raw?.plan||raw;
+  if(!data||typeof data!=="object") throw new Error("A IA retornou um plano inválido.");
+  const shared=notesOf(data.notes);
+  const list=Array.isArray(data.workouts)&&data.workouts.length?data.workouts.slice(0,7):[data];
+  const workouts=list.map(w=>normalizeAiWorkout(w,shared)).filter(Boolean);
+  if(!workouts.length) throw new Error("A sugestão não contém treinos e exercícios utilizáveis.");
+  return workouts;
 }
 
 const AI_PLANNER_DEFAULTS={objective:"hipertrofia",level:"Iniciante",daysPerWeek:3,durationMinutes:60,equipment:"",limitations:"",splitPreference:""};
+// Rascunho: lista de treinos sugeridos/lidos, ainda não salvos.
 export function getAiDraft(){ return aiPlanDraft; }
-export function setAiDraft(plan){ aiPlanDraft=plan; }
+export function setAiDraft(workouts){ aiPlanDraft=workouts&&workouts.length?workouts:null; }
+export function removeAiDraftWorkout(index){ if(aiPlanDraft) setAiDraft(aiPlanDraft.filter((_,i)=>i!==index)); }
 export function getAiPlannerInput(){ return aiPlannerLast||AI_PLANNER_DEFAULTS; }
 export function rememberAiPlannerInput(input){ aiPlannerLast=input; }
 // Modo do planejador: "describe" (objetivo e rotina) ou "photo" (foto da ficha da academia).
@@ -63,7 +79,7 @@ async function postAi(path,body,timeoutMs){
       const detail=Array.isArray(data?.detail)?"Confira as fotos e tente novamente.":data?.detail;
       throw new Error(detail||"Não foi possível gerar o planejamento agora.");
     }
-    return normalizeAiPlan(data);
+    return normalizeAiPlans(data);
   }catch(error){
     if(error?.name==="AbortError") throw new Error("A solicitação demorou demais. Tente novamente.");
     if(error instanceof TypeError) throw new Error("Sem conexão com o servidor. Verifique sua internet.");

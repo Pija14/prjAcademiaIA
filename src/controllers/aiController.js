@@ -1,5 +1,5 @@
 import { renderTrainings } from "./trainingsController.js";
-import { AI_SHEET_MAX_IMAGES, addAiSheetImage, aiPlanningIsConfigured, clearAiSheet, getAiDraft, getAiPlannerInput, getAiPlannerMode, getAiSheet, rememberAiPlannerInput, removeAiSheetImage, requestAiPlan, requestAiPlanFromSheet, setAiDraft, setAiPlannerMode, setAiSheetNotes } from "../models/aiModel.js";
+import { AI_SHEET_MAX_IMAGES, addAiSheetImage, aiPlanningIsConfigured, clearAiSheet, getAiDraft, getAiPlannerInput, getAiPlannerMode, getAiSheet, rememberAiPlannerInput, removeAiDraftWorkout, removeAiSheetImage, requestAiPlan, requestAiPlanFromSheet, setAiDraft, setAiPlannerMode, setAiSheetNotes } from "../models/aiModel.js";
 import { prepareSheetImage } from "../utils/image.js";
 import { addWorkout } from "../models/workoutModel.js";
 import { aiMessageView, aiPlanPreviewView, aiPlannerView, aiSheetView } from "../views/aiView.js";
@@ -98,21 +98,27 @@ export async function generateAiPlan(){
 }
 
 function renderAiPlanPreview(){
-  const plan=getAiDraft();
-  if(!plan) return renderAiPlanner();
-  layout(aiPlanPreviewView(plan),"trainings");
+  const workouts=getAiDraft();
+  if(!workouts) return renderAiPlanner();
+  layout(aiPlanPreviewView(workouts),"trainings");
+}
+
+// Remove um treino da sugestão antes de salvar (ex.: a ficha tinha um treino que você não vai usar).
+export function removeAiDraftWorkoutUi(index){
+  const name=getAiDraft()?.[index]?.name||"este treino";
+  confirmDialog({title:"Remover da sugestão?",text:`${name} não será salvo. Os demais continuam.`,confirmLabel:"Remover",destructive:true,onConfirm:()=>{ removeAiDraftWorkout(index); renderAiPlanPreview(); }});
 }
 
 export function saveAiPlanDraft(){
-  const plan=getAiDraft();
-  if(!plan) return;
-  addWorkout(plan);
+  const workouts=getAiDraft();
+  if(!workouts) return;
+  workouts.forEach(addWorkout);
   setAiDraft(null);
   clearAiSheet();
   renderTrainings();
-  showSnackbar("Treino salvo em Meus Treinos");
+  showSnackbar(workouts.length>1?`${workouts.length} treinos salvos em Meus Treinos`:"Treino salvo em Meus Treinos");
 }
 
 export function discardAiPlanDraft(){
-  confirmDialog({title:"Descartar sugestão?",text:"A ficha sugerida pela IA não será salva.",confirmLabel:"Descartar",destructive:true,onConfirm:()=>{ setAiDraft(null); renderAiPlanner(); }});
+  confirmDialog({title:"Descartar sugestão?",text:"Os treinos sugeridos pela IA não serão salvos.",confirmLabel:"Descartar",destructive:true,onConfirm:()=>{ setAiDraft(null); renderAiPlanner(); }});
 }
