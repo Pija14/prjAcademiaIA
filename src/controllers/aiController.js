@@ -1,7 +1,8 @@
 import { renderTrainings } from "./trainingsController.js";
-import { aiPlanningIsConfigured, getAiDraft, getAiPlannerInput, rememberAiPlannerInput, requestAiPlan, setAiDraft } from "../models/aiModel.js";
+import { AI_SHEET_MAX_IMAGES, addAiSheetImage, aiPlanningIsConfigured, clearAiSheet, getAiDraft, getAiPlannerInput, getAiPlannerMode, getAiSheet, rememberAiPlannerInput, removeAiSheetImage, requestAiPlan, requestAiPlanFromSheet, setAiDraft, setAiPlannerMode, setAiSheetNotes } from "../models/aiModel.js";
+import { prepareSheetImage } from "../utils/image.js";
 import { addWorkout } from "../models/workoutModel.js";
-import { aiMessageView, aiPlanPreviewView, aiPlannerView } from "../views/aiView.js";
+import { aiMessageView, aiPlanPreviewView, aiPlannerView, aiSheetView } from "../views/aiView.js";
 import { confirmDialog } from "../views/components/dialogs.js";
 import { setFieldError } from "../views/components/fields.js";
 import { showSnackbar } from "../views/components/snackbar.js";
@@ -11,7 +12,57 @@ import { layout } from "../views/layoutView.js";
 
 export function renderAiPlanner(){
   if(!aiPlanningIsConfigured()) return renderTrainings();
-  layout(aiPlannerView(getAiPlannerInput()),"trainings");
+  if(getAiPlannerMode()==="photo") layout(aiSheetView(getAiSheet(),AI_SHEET_MAX_IMAGES),"trainings");
+  else layout(aiPlannerView(getAiPlannerInput()),"trainings");
+}
+
+// Alterna entre "Descrever objetivo" e "Foto da ficha" mantendo o que já foi preenchido.
+export function setAiPlannerModeUi(mode){
+  if(getAiPlannerMode()==="describe" && document.getElementById("aiDuration")) rememberAiPlannerInput(readAiPlannerForm());
+  setAiPlannerMode(mode);
+  renderAiPlanner();
+}
+
+export function rememberSheetNotes(value){ setAiSheetNotes(value); }
+
+export async function pickSheetPhoto(input){
+  const files=[...(input.files||[])];
+  input.value="";
+  if(!files.length) return;
+  const free=AI_SHEET_MAX_IMAGES-getAiSheet().images.length;
+  if(files.length>free) showSnackbar(`Só cabem mais ${free} ${free===1?"foto":"fotos"}. As demais foram ignoradas.`);
+  showAiPlannerMessage("Preparando a foto…");
+  try{
+    for(const file of files.slice(0,Math.max(0,free))) addAiSheetImage(await prepareSheetImage(file));
+    renderAiPlanner();
+  }catch(error){
+    renderAiPlanner();
+    showAiPlannerMessage(error?.message||"Não foi possível usar esta imagem.",true);
+  }
+}
+
+export function removeSheetPhoto(index){
+  removeAiSheetImage(index);
+  renderAiPlanner();
+}
+
+export async function readSheetWithAi(){
+  const sheet=getAiSheet();
+  if(!sheet.images.length){ showAiPlannerMessage("Adicione a foto da ficha.",true); return; }
+  setAiSheetNotes(aiField("aiSheetNotes",400));
+  const button=document.getElementById("aiSheetButton");
+  const label=button?.querySelector(".md-button-label");
+  if(button){ button.disabled=true; button.classList.add("is-loading"); }
+  if(label) label.textContent="Lendo a ficha…";
+  showAiPlannerMessage("A IA está lendo a sua ficha. Isso pode levar até um minuto.");
+  try{
+    setAiDraft(await requestAiPlanFromSheet(sheet));
+    renderAiPlanPreview();
+  }catch(error){
+    showAiPlannerMessage(error?.message||"Não foi possível ler a ficha.",true);
+  }finally{
+    if(button&&document.body.contains(button)){ button.disabled=false; button.classList.remove("is-loading"); if(label) label.textContent="Ler ficha"; }
+  }
 }
 
 function aiField(id,maxLength=600){ return String(document.getElementById(id)?.value||"").trim().slice(0,maxLength); }
@@ -57,6 +108,7 @@ export function saveAiPlanDraft(){
   if(!plan) return;
   addWorkout(plan);
   setAiDraft(null);
+  clearAiSheet();
   renderTrainings();
   showSnackbar("Treino salvo em Meus Treinos");
 }

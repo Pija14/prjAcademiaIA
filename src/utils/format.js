@@ -41,15 +41,19 @@ export function cloneJSON(x){ return JSON.parse(JSON.stringify(x)); }
 export function f2EscapeAttr(s){ return esc(String(s)).replace(/`/g,"&#96;"); }
 
 const NAME_MINOR_WORDS=new Set(["e","de","da","do","das","dos","com","em","na","no","nas","nos","a","o","as","os","ao","aos","à","às","para","por","ou","sem"]);
+const TRAINING_LABEL_WORDS=new Set(["treino","ficha","dia","divisão","divisao"]);
 
 export function f2DisplayName(value){
   const text=String(value??"").trim().replace(/\s+/g," ");
   if(!text) return "";
   // Nomes digitados todos em maiúsculas não permitem distinguir siglas; nos demais, "ART" e "TRX" são preservados.
   const allCaps=text===text.toLocaleUpperCase("pt-BR");
-  return text.split(" ").map((word,i)=>{
+  const words=text.split(" ");
+  return words.map((word,i)=>{
     if(!allCaps && word.length>1 && /\p{L}/u.test(word) && word===word.toLocaleUpperCase("pt-BR")) return word;
     const lower=word.toLocaleLowerCase("pt-BR");
+    // "Treino A", "Ficha B", "Dia C": a letra é o nome do treino, não o artigo "a".
+    if(i>0 && /^\p{L}$/u.test(word) && TRAINING_LABEL_WORDS.has(words[i-1].toLocaleLowerCase("pt-BR"))) return word.toLocaleUpperCase("pt-BR");
     if(i>0 && NAME_MINOR_WORDS.has(lower)) return lower;
     return lower.replace(/(^|[-/(])(\p{L})/gu,(_,sep,ch)=>sep+ch.toLocaleUpperCase("pt-BR"));
   }).join(" ");

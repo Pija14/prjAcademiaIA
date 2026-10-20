@@ -6,7 +6,10 @@ authorization and the persistent source of truth for user data live here.
 """
 import hashlib
 import hmac
+import base64
+import binascii
 import json
+import logging
 import os
 import secrets
 import time
@@ -473,6 +476,61 @@ Use 1-12 groups, 1-16 exercises per group, and 1-12 sets per exercise. Sets must
 Write every visible value in Brazilian Portuguese. Do not prescribe medical treatment, diagnose injuries, or claim guaranteed results. Include a brief educational-safety note in notes. Avoid unsupported or unsafe exercises when limitations are supplied."""
 
 
+SHEET_MIME_TYPES = ("image/jpeg", "image/png", "image/webp")
+SHEET_MAX_BYTES = 4 * 1024 * 1024  # por imagem, depois de decodificada
+
+
+class SheetImage(BaseModel):
+    mimeType: Literal["image/jpeg", "image/png", "image/webp"]
+    data: str = Field(min_length=100, max_length=6_000_000)  # base64 sem o prefixo data:
+
+    @field_validator("data")
+    @classmethod
+    def valid_base64(cls, value: str) -> str:
+        value = value.strip()
+        try:
+            raw = base64.b64decode(value, validate=True)
+        except (binascii.Error, ValueError) as exc:
+            raise ValueError("Imagem inválida.") from exc
+        if len(raw) > SHEET_MAX_BYTES:
+            raise ValueError("Imagem grande demais (máximo 4 MB).")
+        return value
+
+
+class SheetPlanRequest(BaseModel):
+    images: list[SheetImage] = Field(min_length=1, max_length=3)
+    notes: str = Field(default="", max_length=400)
+
+    @field_validator("notes")
+    @classmethod
+    def trim_notes(cls, value: str) -> str:
+        return value.strip()
+
+
+SHEET_PROMPT = """You read photos of a gym workout sheet ("ficha de treino") and transcribe it. Return ONLY valid JSON with this shape:
+{
+  "name": "string", "description": "string", "level": "Personalizado",
+  "groups": [{"name": "string", "exercises": [{"name": "string", "equipment": "string", "seriesCount": 3, "sets": [{"reps": "12", "weight": "20 kg"}]}]}],
+  "notes": ["string"]
+}
+Rules:
+- Transcribe faithfully. Do NOT invent, add or replace exercises. Keep the order of the sheet.
+- Each training day or letter (Treino A, B, C, Segunda, Superiores...) becomes one group named as in the sheet (e.g. "Treino A").
+- "3x12" means seriesCount 3 with reps "12" in each set; "4x10/8/6" means 4 sets with reps per set; "3x30s" keeps "30s"; "até a falha" keeps the text.
+- If a load/weight is written, put it in "weight" of each set (e.g. "20 kg"); otherwise use "".
+- Rest times, cadence or technique notes go to "notes".
+- Use the equipment field only when written or obvious from the exercise name (máquina, halteres, barra, polia, cabo, livre, peso corporal); otherwise "".
+- Fix obvious handwriting/spelling mistakes in exercise names, writing them in Brazilian Portuguese as commonly used in Brazilian gyms.
+- If something is unreadable, skip only that item and mention it in "notes".
+- If the images are not a workout sheet or nothing is readable, return ONLY {"error": "short reason in Brazilian Portuguese"}.
+Use 1-12 groups, 1-16 exercises per group, and 1-12 sets per exercise. Sets must match seriesCount. Write every visible value in Brazilian Portuguese. Include a brief note reminding the user to review the transcription."""
+
+
+def sheet_prompt_for(data: SheetPlanRequest) -> str:
+    extra = f"\nUser notes about the sheet: {data.notes}" if data.notes else ""
+    return f"{SHEET_PROMPT}\n\nThe user attached {len(data.images)} photo(s) of the sheet.{extra}\n"
+
+
 def prompt_for(data: PlanRequest) -> str:
     return f"""{SYSTEM_PROMPT}\n\nCreate a plan using this user profile:\n- Objetivo: {data.objective}\n- Nível: {data.level}\n- Dias por semana: {data.daysPerWeek}\n- Duração por treino: {data.durationMinutes} minutos\n- Equipamentos: {data.equipment or 'não informado'}\n- Limitações/observações: {data.limitations or 'não informado'}\n- Preferência de divisão: {data.splitPreference or 'sem preferência'}\n"""
 
@@ -487,13 +545,18 @@ def parse_json(text: str) -> dict:
     return value
 
 
-async def generate_with_openai(prompt: str) -> dict:
+async def generate_with_openai(prompt: str, images: list[SheetImage] | None = None) -> dict:
     key = os.getenv("OPENAI_API_KEY", "")
     if not key:
         raise HTTPException(503, "OPENAI_API_KEY não configurada no servidor.")
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-    payload = {"model": model, "messages": [{"role": "user", "content": prompt}], "response_format": {"type": "json_object"}, "temperature": 0.4}
-    async with httpx.AsyncClient(timeout=60) as client:
+    content: Any = prompt
+    if images:
+        content = [{"type": "text", "text": prompt}] + [
+            {"type": "image_url", "image_url": {"url": f"data:{img.mimeType};base64,{img.data}"}} for img in images
+        ]
+    payload = {"model": model, "messages": [{"role": "user", "content": content}], "response_format": {"type": "json_object"}, "temperature": 0.2 if images else 0.4}
+    async with httpx.AsyncClient(timeout=90 if images else 60) as client:
         response = await client.post("https://api.openai.com/v1/chat/completions", json=payload, headers={"Authorization": f"Bearer {key}"})
     if response.status_code >= 400:
         raise HTTPException(502, "Não foi possível gerar o plano com a IA.")
@@ -505,9 +568,13 @@ async def generate_with_openai(prompt: str) -> dict:
     return parse_json(text)
 
 
-GEMINI_FALLBACK_MODELS = "gemini-flash-latest,gemini-3-flash-preview"
-# Modelo sobrecarregado (429/503) ou retirado (404): tenta o próximo da lista.
+logger = logging.getLogger("meu_treino.ia")
+
+GEMINI_FALLBACK_MODELS = "gemini-3-flash-preview,gemini-flash-latest"
+# Modelo sobrecarregado (429/503), com erro interno (500) ou retirado (404): tenta o próximo da lista.
 GEMINI_RETRY_STATUS = {404, 429, 500, 503}
+# Tempo máximo por modelo; esgotado, tenta o próximo (o app espera até 90 s com foto).
+GEMINI_TIMEOUT_TEXT, GEMINI_TIMEOUT_IMAGE = 30.0, 40.0
 
 
 def gemini_models() -> list[str]:
@@ -516,26 +583,52 @@ def gemini_models() -> list[str]:
     return list(dict.fromkeys(name.strip() for name in names if name.strip()))
 
 
-async def generate_with_gemini(prompt: str) -> dict:
+def gemini_generation_config(model: str, with_images: bool) -> dict:
+    config: dict[str, Any] = {"responseMimeType": "application/json", "temperature": 0.2 if with_images else 0.4}
+    # Gemini 3: raciocínio "baixo" basta para montar/transcrever a ficha e deixa a resposta ~10x mais rápida.
+    if model.startswith("gemini-3"):
+        config["thinkingConfig"] = {"thinkingLevel": "low"}
+    return config
+
+
+def gemini_text(result: dict) -> str:
+    parts = result["candidates"][0]["content"]["parts"]
+    return next(part["text"] for part in parts if part.get("text") and not part.get("thought"))
+
+
+async def generate_with_gemini(prompt: str, images: list[SheetImage] | None = None) -> dict:
     key = os.getenv("GEMINI_API_KEY", "").strip()
     if not key:
         raise HTTPException(503, "GEMINI_API_KEY não configurada no servidor.")
-    payload = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"responseMimeType": "application/json", "temperature": 0.4}}
+    parts: list[dict] = [{"text": prompt}] + [{"inline_data": {"mime_type": img.mimeType, "data": img.data}} for img in images or []]
     # A chave vai no cabeçalho, não na URL, para não aparecer em logs.
     headers = {"x-goog-api-key": key}
-    response = None
-    async with httpx.AsyncClient(timeout=60) as client:
+    timeout = GEMINI_TIMEOUT_IMAGE if images else GEMINI_TIMEOUT_TEXT
+    response, timed_out = None, False
+    async with httpx.AsyncClient(timeout=timeout) as client:
         for model in gemini_models():
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-            response = await client.post(url, json=payload, headers=headers)
+            payload = {"contents": [{"parts": parts}], "generationConfig": gemini_generation_config(model, bool(images))}
+            try:
+                response = await client.post(url, json=payload, headers=headers)
+            except httpx.TimeoutException:
+                logger.warning("Gemini %s: sem resposta em %ss", model, timeout)
+                timed_out, response = True, None
+                continue
+            except httpx.HTTPError as exc:
+                logger.warning("Gemini %s: falha de conexão (%s)", model, type(exc).__name__)
+                response = None
+                continue
             if response.status_code not in GEMINI_RETRY_STATUS:
                 break
+            logger.warning("Gemini %s: HTTP %s, tentando o próximo modelo", model, response.status_code)
+    if response is None and timed_out:
+        raise HTTPException(504, "A IA demorou demais para responder. Tente novamente em instantes.")
     if response is None or response.status_code >= 400:
-        raise HTTPException(502, "Não foi possível gerar o plano com a IA.")
-    result = response.json()
+        raise HTTPException(502, "Não foi possível gerar o plano com a IA. Tente novamente em instantes.")
     try:
-        text = result["candidates"][0]["content"]["parts"][0]["text"]
-    except (KeyError, IndexError, TypeError) as exc:
+        text = gemini_text(response.json())
+    except (KeyError, IndexError, TypeError, StopIteration, ValueError) as exc:
         raise HTTPException(502, "O provedor de IA não retornou um plano utilizável.") from exc
     return parse_json(text)
 
@@ -563,13 +656,26 @@ def health() -> dict[str, str]:
     return {"status": "ok", "provider": os.getenv("AI_PROVIDER", "gemini"), "database": "ok"}
 
 
+async def generate_plan(prompt: str, images: list[SheetImage] | None = None) -> dict:
+    provider = os.getenv("AI_PROVIDER", "gemini").strip().lower()
+    if provider == "openai":
+        return await generate_with_openai(prompt, images)
+    if provider == "gemini":
+        return await generate_with_gemini(prompt, images)
+    raise HTTPException(503, "AI_PROVIDER deve ser 'gemini' ou 'openai'.")
+
+
+@app.post("/ai/plan-from-image")
+async def create_plan_from_image(data: SheetPlanRequest, request: Request, user: User = Depends(current_user)) -> dict:
+    """Lê a foto da ficha de academia e devolve o plano no mesmo formato de /ai/plan."""
+    enforce_rate_limit(request)
+    result = await generate_plan(sheet_prompt_for(data), data.images)
+    if isinstance(result.get("error"), str) and not result.get("groups"):
+        raise HTTPException(422, f"Não consegui ler a ficha: {result['error'][:200]}")
+    return result
+
+
 @app.post("/ai/plan")
 async def create_plan(data: PlanRequest, request: Request, user: User = Depends(current_user)) -> dict:
     enforce_rate_limit(request)
-    provider = os.getenv("AI_PROVIDER", "gemini").strip().lower()
-    prompt = prompt_for(data)
-    if provider == "openai":
-        return await generate_with_openai(prompt)
-    if provider == "gemini":
-        return await generate_with_gemini(prompt)
-    raise HTTPException(503, "AI_PROVIDER deve ser 'gemini' ou 'openai'.")
+    return await generate_plan(prompt_for(data))

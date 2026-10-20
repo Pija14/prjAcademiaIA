@@ -26,7 +26,7 @@ function normalizeAiPlan(raw){
       const count=Math.min(12,Math.max(1,Number.isFinite(requestedCount)?requestedCount:3));
       const sourceSets=Array.isArray(exercise?.sets)?exercise.sets:[];
       if(!exerciseName) return null;
-      return {id:uid("ex-"),name:exerciseName,equipment:String(exercise?.equipment||"").slice(0,120),order:ei,seriesCount:count,sets:Array.from({length:count},(_,si)=>({number:si+1,reps:String(sourceSets[si]?.reps??sourceSets[0]?.reps??"").slice(0,30),weight:"",done:false,completedAt:null}))};
+      return {id:uid("ex-"),name:exerciseName,equipment:String(exercise?.equipment||"").slice(0,120),order:ei,seriesCount:count,sets:Array.from({length:count},(_,si)=>({number:si+1,reps:String(sourceSets[si]?.reps??sourceSets[0]?.reps??"").slice(0,30),weight:String(sourceSets[si]?.weight??sourceSets[0]?.weight??"").slice(0,20),done:false,completedAt:null}))};
     }).filter(Boolean):[];
     return name&&exercises.length?{id:uid("grupo-"),name,order:gi,exercises}:null;
   }).filter(Boolean):[];
@@ -39,19 +39,44 @@ export function getAiDraft(){ return aiPlanDraft; }
 export function setAiDraft(plan){ aiPlanDraft=plan; }
 export function getAiPlannerInput(){ return aiPlannerLast||AI_PLANNER_DEFAULTS; }
 export function rememberAiPlannerInput(input){ aiPlannerLast=input; }
-// Solicita um plano ao backend. Lança erro com mensagem amigável em caso de falha.
-export async function requestAiPlan(input,{timeoutMs=30000}={}){
+// Modo do planejador: "describe" (objetivo e rotina) ou "photo" (foto da ficha da academia).
+let aiPlannerMode="describe";
+let aiSheet={images:[],notes:""};
+export const AI_SHEET_MAX_IMAGES=3;
+export function getAiPlannerMode(){ return aiPlannerMode; }
+export function setAiPlannerMode(mode){ aiPlannerMode=mode==="photo"?"photo":"describe"; }
+export function getAiSheet(){ return aiSheet; }
+export function addAiSheetImage(image){ if(aiSheet.images.length<AI_SHEET_MAX_IMAGES) aiSheet.images=[...aiSheet.images,image]; }
+export function removeAiSheetImage(index){ aiSheet.images=aiSheet.images.filter((_,i)=>i!==index); }
+export function setAiSheetNotes(notes){ aiSheet.notes=String(notes||"").slice(0,400); }
+export function clearAiSheet(){ aiSheet={images:[],notes:""}; }
+
+async function postAi(path,body,timeoutMs){
   const controller=new AbortController(), timeout=setTimeout(()=>controller.abort(),timeoutMs);
   try{
     const headers={"Content-Type":"application/json"};
     const token=getAccessToken();
     if(token) headers.Authorization=`Bearer ${token}`;
-    const response=await fetch(`${aiPlanningApiUrl()}/ai/plan`,{method:"POST",headers,body:JSON.stringify(input),signal:controller.signal});
+    const response=await fetch(`${aiPlanningApiUrl()}${path}`,{method:"POST",headers,body:JSON.stringify(body),signal:controller.signal});
     const data=await response.json().catch(()=>null);
-    if(!response.ok) throw new Error(data?.detail||"Não foi possível gerar o planejamento agora.");
+    if(!response.ok){
+      const detail=Array.isArray(data?.detail)?"Confira as fotos e tente novamente.":data?.detail;
+      throw new Error(detail||"Não foi possível gerar o planejamento agora.");
+    }
     return normalizeAiPlan(data);
   }catch(error){
     if(error?.name==="AbortError") throw new Error("A solicitação demorou demais. Tente novamente.");
+    if(error instanceof TypeError) throw new Error("Sem conexão com o servidor. Verifique sua internet.");
     throw error;
   }finally{ clearTimeout(timeout); }
+}
+
+// Lê a foto da ficha e devolve o treino transcrito (mesmo formato do plano sugerido).
+export function requestAiPlanFromSheet({images,notes},{timeoutMs=90000}={}){
+  return postAi("/ai/plan-from-image",{images:images.map(({mimeType,data})=>({mimeType,data})),notes:String(notes||"").trim()},timeoutMs);
+}
+
+// Solicita um plano ao backend. Lança erro com mensagem amigável em caso de falha.
+export async function requestAiPlan(input,{timeoutMs=30000}={}){
+  return postAi("/ai/plan",input,timeoutMs);
 }

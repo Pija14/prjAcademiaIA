@@ -5239,6 +5239,149 @@ body:has(.m3-page) {
   line-height: 20px;
 }
 
+/* ---------- Planejador: escolha do modo e foto da ficha ---------- */
+.ai-mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-full);
+  overflow: hidden;
+}
+
+.ai-mode-option {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--md-sys-color-on-surface);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: .1px;
+  cursor: pointer;
+  transition: background-color var(--md-sys-motion-short) var(--md-sys-motion-standard);
+}
+
+.ai-mode-option + .ai-mode-option { border-left: 1px solid var(--md-sys-color-outline); }
+.ai-mode-option .md-icon { width: 18px; height: 18px; }
+.ai-mode-option.is-selected { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
+.ai-mode-option:focus-visible { outline: 3px solid var(--md-sys-color-secondary); outline-offset: -3px; }
+
+.ai-sheet-empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-4);
+  border: 2px dashed var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-large);
+  color: var(--md-sys-color-on-surface-variant);
+  text-align: center;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.ai-sheet-empty p { margin: 0; }
+
+.ai-sheet-empty-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--md-sys-shape-full);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.ai-sheet-thumbs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.ai-sheet-thumb {
+  position: relative;
+  margin: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.ai-sheet-thumb img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: var(--md-sys-shape-medium);
+  background: var(--md-sys-color-surface-container-high);
+}
+
+.ai-sheet-thumb figcaption {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 12px;
+  text-align: center;
+}
+
+.ai-sheet-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 36px;
+  height: 36px;
+  background: color-mix(in srgb, var(--md-sys-color-scrim, #000) 55%, transparent);
+  color: #fff;
+}
+
+.ai-sheet-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.ai-sheet-pick {
+  position: relative;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* O input de arquivo fica invisível sobre o botão: toque e teclado continuam funcionando. */
+.ai-sheet-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ai-sheet-pick:focus-within { outline: 3px solid var(--md-sys-color-secondary); outline-offset: 2px; }
+
+.ai-sheet-limit {
+  margin: var(--space-3) 0 0;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 14px;
+}
+
+.ai-sheet-tips {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.ai-sheet-tips li { display: flex; align-items: flex-start; gap: var(--space-2); }
+.ai-sheet-tips .md-icon { width: 16px; height: 16px; flex: none; margin-top: 1px; color: var(--md-sys-color-primary); }
+
+@media (min-width: 600px) {
+  .ai-sheet-actions { grid-template-columns: max-content max-content; }
+}
+
 /* ---------- Editor de treinos ---------- */
 .editor-groups-head {
   display: flex;
