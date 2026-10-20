@@ -2,6 +2,7 @@
 # public backend URL and is intentionally versioned for GitHub Pages.
 
 # Backend secrets and virtual environments
+.env
 ai-backend/.env
 ai-backend/.venv/
 ai-backend/__pycache__/

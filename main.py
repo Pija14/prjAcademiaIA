@@ -505,16 +505,32 @@ async def generate_with_openai(prompt: str) -> dict:
     return parse_json(text)
 
 
+GEMINI_FALLBACK_MODELS = "gemini-flash-latest,gemini-3-flash-preview"
+# Modelo sobrecarregado (429/503) ou retirado (404): tenta o próximo da lista.
+GEMINI_RETRY_STATUS = {404, 429, 500, 503}
+
+
+def gemini_models() -> list[str]:
+    """GEMINI_MODEL primeiro; depois GEMINI_FALLBACK_MODELS (separados por vírgula), sem repetir."""
+    names = [os.getenv("GEMINI_MODEL", "").strip()] + os.getenv("GEMINI_FALLBACK_MODELS", GEMINI_FALLBACK_MODELS).split(",")
+    return list(dict.fromkeys(name.strip() for name in names if name.strip()))
+
+
 async def generate_with_gemini(prompt: str) -> dict:
-    key = os.getenv("GEMINI_API_KEY", "")
+    key = os.getenv("GEMINI_API_KEY", "").strip()
     if not key:
         raise HTTPException(503, "GEMINI_API_KEY não configurada no servidor.")
-    model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
     payload = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"responseMimeType": "application/json", "temperature": 0.4}}
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
+    # A chave vai no cabeçalho, não na URL, para não aparecer em logs.
+    headers = {"x-goog-api-key": key}
+    response = None
     async with httpx.AsyncClient(timeout=60) as client:
-        response = await client.post(url, json=payload)
-    if response.status_code >= 400:
+        for model in gemini_models():
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+            response = await client.post(url, json=payload, headers=headers)
+            if response.status_code not in GEMINI_RETRY_STATUS:
+                break
+    if response is None or response.status_code >= 400:
         raise HTTPException(502, "Não foi possível gerar o plano com a IA.")
     result = response.json()
     try:

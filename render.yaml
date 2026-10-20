@@ -19,7 +19,11 @@ services:
       - key: ACCESS_TOKEN_MINUTES
         value: "60"
       - key: AI_PROVIDER
-        value: openai
+        value: gemini
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-flash-latest
       - key: OPENAI_API_KEY
         sync: false
       - key: GOOGLE_CLIENT_ID
